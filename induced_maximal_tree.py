@@ -13,6 +13,8 @@ def ComputeL(G):
         maximal number of leaves.
     """ 
     global L
+    global vertice
+    vertice = G.vertices()
     n=G.num_verts()
     L=dict([(i,0) for i in range(0,n+1)])
     ComputeLRecursive(G,0,n,set())
@@ -41,20 +43,20 @@ def ComputeLRecursive(G,i,n,V_add):
     promising=sum([L[m]<l*(connexity_lack==0)]+[L[m+j]<l+j-connexity_lack for j in range(1,G.num_verts()-m)])>0
     if i==n and acyclic and connexity_lack==0:
         #All vertices are either included are excluded
-        L[m]=max(L[m],l)  
+        L[m]=max(L[m],l)
     elif acyclic and promising and i<n:
         #The branch is valid and promising
-        if i in G.vertices():
+        if vertice[i] in G.vertices():
             #The vertex is in the connected component G
-            V_add.add(i)
+            V_add.add(vertice[i])
             ComputeLRecursive(G,i+1,n,V_add)
-            V_add.remove(i)
-            neighbors_of_i=G.neighbors(i)
-            G.delete_vertex(i)
+            V_add.remove(vertice[i])
+            neighbors_of_i=G.neighbors(vertice[i])
+            G.delete_vertex(vertice[i])
             connected_component=G
             connectable=True
             if len(V_add)>0:
-                for v in V_add: break
+                for v in V_add: break #select an element of V_add
                 C=G.connected_component_containing_vertex(v)
                 connectable=V_add.issubset(C)
                 if len(C)<G.num_verts():
@@ -62,9 +64,9 @@ def ComputeLRecursive(G,i,n,V_add):
             if connectable:
                 #rejecting i does not separate V_add
                 ComputeLRecursive(connected_component,i+1,n,V_add)
-            G.add_vertex(i)
+            G.add_vertex(vertice[i])
             for j in neighbors_of_i:
-                G.add_edge(i,j)
+                G.add_edge(vertice[i],j)
         else:
             #The vertex is not in the connected component G
             ComputeLRecursive(G,i+1,n,V_add)
