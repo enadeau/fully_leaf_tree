@@ -62,7 +62,7 @@ def ComputeLRecursive(G):
     global n
     m=B.subtree_size
     l=B.subtree_num_leaf()
-    promising=sum([L[i]<leaf_potential(i) for i in range(m,n+1)])>0
+    promising=sum([L[i]<leaf_potential(i) for i in range(m,n+1-B.num_rejected)])>0
     next_vertex=B.vertex_to_add()
     if next_vertex==None:
         #The subtree can't be extend
