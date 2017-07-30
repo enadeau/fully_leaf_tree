@@ -26,6 +26,7 @@ def ComputeL(G):
     """
     global L
     global B
+    global n
     n=G.num_verts()
     L=dict([(i,0) for i in range(0,n+1)])
     B=GraphBorder(G)
@@ -45,12 +46,23 @@ def ComputeLRecursive(G):
         When at the end of the research tree, updates a global dictonnary
         L create by ComputeL(G)
     """
+    def leaf_potential(i):
+        r"""
+        Evaluate de maximal potential number of leaf for a subtree of i
+        vertices build from the current subtree
+        """
+        if m<=i<=m+B.border_size:
+            return l+i-m
+        if i>m+B.border_size:
+            return l+i-m-1
+        else:
+            return 0
     global L
     global B
+    global n
     m=B.subtree_size
     l=B.subtree_num_leaf()
-    #promising=sum([L[m]<l*(connexity_lack==0)]+[L[m+j]<l+j-connexity_lack for j in range(1,G.num_verts()-m)])>0
-    promising=True
+    promising=sum([L[i]<leaf_potential(i) for i in range(m,n+1)])>0
     next_vertex=B.vertex_to_add()
     if next_vertex==None:
         #The subtree can't be extend
