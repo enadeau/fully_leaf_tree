@@ -26,42 +26,29 @@ def ComputeL(G):
         sage: ComputeL(graphs.CubeGraph(3))
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: 0, 7: 0, 8: 0}
     """
-    global L
-    global B
-    global n
+    def treat_state():
+        """Explore all the possible subtree of G and update the dictionnary L
+        to keep track of the maximum.
+
+        Branchs with including/excluding a vertex of the subtree.
+        """
+        m=B.subtree_size
+        l=B.subtree_num_leaf()
+        promising=sum([L[i]<B.leaf_potential(i) for i in range(m,n+1-B.num_rejected)])>0
+        next_vertex=B.vertex_to_add()
+        if next_vertex==None:
+            #The subtree can't be extend
+            L[m]=max(L[m],l)
+        elif promising:
+            B.add_to_subtree(next_vertex)
+            treat_state()
+            B.undo_last_user_action()
+            B.reject_vertex(next_vertex)
+            treat_state()
+            B.undo_last_user_action()
+
     n=G.num_verts()
     L=dict([(i,0) for i in range(0,n+1)])
     B=GraphBorder(G)
-    ComputeLRecursive(G)
+    treat_state()
     return L
-
-def ComputeLRecursive(G):
-    """Explore all the possible subtree of G and update the dictionnary L
-    to keep track of the maximum.
-
-    INPUTS:
-        G - the graph of the connected component of the original graph
-        (without the rejected vertices) containing the vertices of V_add
-
-    OUTPUT:
-        Branchs with including/excluding a vertex of the subtree.
-        When at the end of the research tree, updates a global dictonnary
-        L create by ComputeL(G)
-    """
-    global L
-    global B
-    global n
-    m=B.subtree_size
-    l=B.subtree_num_leaf()
-    promising=sum([L[i]<B.leaf_potential(i) for i in range(m,n+1-B.num_rejected)])>0
-    next_vertex=B.vertex_to_add()
-    if next_vertex==None:
-        #The subtree can't be extend
-        L[m]=max(L[m],l)
-    elif promising:
-        B.add_to_subtree(next_vertex)
-        ComputeLRecursive(G)
-        B.undo_last_user_action()
-        B.reject_vertex(next_vertex)
-        ComputeLRecursive(G)
-        B.undo_last_user_action()
