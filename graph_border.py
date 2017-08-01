@@ -171,14 +171,16 @@ class GraphBorder():
 
     def leaf_potential(self,i):
         r"""
-        Evaluate de maximal potential number of leaf for a subtree of i
+        Evaluate a maximal potential number of leaf for a subtree of i
         vertices build from the current subtree
+
+        The size of the tree must be bigger than the current tree size.
         """
         assert i>=self.subtree_size, "The size of the tree is not big enough"
-        if m<=i<=m+B.border_size:
-            return l+i-m
-        if i>m+B.border_size:
-            return l+i-m-1
+        if self.subtree_size<=i and i<=self.subtree_size+self.border_size:
+            return self.num_leaf+i-self.subtree_size
+        elif i>self.subtree_size+self.border_size:
+            return self.num_leaf+i-self.subtree_size-1
 
     def plot(self):
         r"""
