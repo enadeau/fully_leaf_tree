@@ -48,23 +48,12 @@ def ComputeLRecursive(G):
         When at the end of the research tree, updates a global dictonnary
         L create by ComputeL(G)
     """
-    def leaf_potential(i):
-        r"""
-        Evaluate de maximal potential number of leaf for a subtree of i
-        vertices build from the current subtree
-        """
-        if m<=i<=m+B.border_size:
-            return l+i-m
-        if i>m+B.border_size:
-            return l+i-m-1
-        else:
-            return 0
     global L
     global B
     global n
     m=B.subtree_size
     l=B.subtree_num_leaf()
-    promising=sum([L[i]<leaf_potential(i) for i in range(m,n+1-B.num_rejected)])>0
+    promising=sum([L[i]<B.leaf_potential(i) for i in range(m,n+1-B.num_rejected)])>0
     next_vertex=B.vertex_to_add()
     if next_vertex==None:
         #The subtree can't be extend
