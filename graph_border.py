@@ -168,3 +168,38 @@ class GraphBorder():
             return 0
         else:
             return self.num_leaf
+
+    def plot(self):
+        r"""
+        Plot a graph representation of the graph bordrer with following convention for
+        node colors:
+            green: The node is in the subtre
+            yellow: The vertex is on the border
+            red: The vertex is rejected by an other vertex
+            black:The vertex is rejected by the user
+            blue: If the vertex is available
+
+        The vertex of the induced subtree are in green
+        """
+        vertex_color={"blue": [], "yellow": [], "black": [], "red": [], "green": []} 
+        for v in self.graph.vertex_iterator():
+            (state,info)=self.vertex_status[v]
+            if state=="a":
+                vertex_color["blue"].append(v)
+            elif state=="b":
+                vertex_color["yellow"].append(v)
+            elif state=="s":
+                vertex_color["green"].append(v)
+            else: #state is "r"
+                if info==v:
+                    vertex_color["black"].append(v)
+                else:
+                    vertex_color["red"].append(v)
+        
+        tree_edge=[]
+        for (u,v,label) in self.graph.edge_iterator():
+            if self.vertex_status[v][0]=="s"==self.vertex_status[u][0]:
+                tree_edge.append((u,v))
+
+        return self.graph.plot(vertex_colors=vertex_color, edge_colors={"green": tree_edge})
+
