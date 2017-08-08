@@ -218,3 +218,5 @@ class GraphBorder():
 
         return self.graph.plot(vertex_colors=vertex_color, edge_colors={"green": tree_edge})
 
+    def __repr__(self):
+        return "subtree_size: %s, num_leaf: %s, border_size: %s, num_rejected: %s," %(self.subtree_size,self.num_leaf, self.border_size, self.num_rejected)
