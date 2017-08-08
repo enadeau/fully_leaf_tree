@@ -92,6 +92,7 @@ class GraphBorder():
             #If the vertices is already rejected we do nothing
         if self.vertex_status[v][0]=="b": #The vertex extend a current solution
             self.vertex_status[v]=("s",1)
+            self.border_size-=1
         else: #The vertex is the first vertex to be set to "s"
             self.vertex_status[v]=("s",0)
         self.num_leaf+=1
