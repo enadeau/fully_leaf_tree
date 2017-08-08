@@ -7,8 +7,8 @@ class GraphBorder():
         vertex_status: Dictionnary that store the state of each vertices with options.
         The status of a vertex v is of the form:
             - ("s",d) if v is in the subtree with degree d in the subtree;
-            - ("b",None) if v is not in the subtree and is adjacent to exactly one
-              vertex of the subtree;
+            - ("b",p) if v is not in the subtree and is adjacent to exactly one
+              vertex of the subtree which is p;
             - ("r",i) if v rejected of the subtree. If i==v the vertex was voluntary rejected
               from a potential subtree by the users. Otherwise it indicates that the addition
               of the vertex v to the subtree will form a cycle since vertex i was add to
@@ -73,8 +73,7 @@ class GraphBorder():
         with a first vertex.
 
         INPUTS:
-            v - A vertex of the border or if the subtree is empty or any unrejected vertex
-                if the the subtree is empty.
+            v - A vertex of the border or if the subtree is empty any available vertex
         """
         assert self.vertex_status[v][0]=="b" or ("b",None) not in self.vertex_status.values()
         for u in self.graph.neighbor_iterator(v):
