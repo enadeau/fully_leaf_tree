@@ -134,6 +134,9 @@ class GraphBorder():
         """
         assert self.vertex_status[v][0]=="b" or self.subtree_size==0
         self.vertex_status[v]=("r",v)
+        if self.subtree_size!=0:
+            #The element we reject is on the border
+            self.border_size-=1
         self.num_rejected+=1
         self.user_intervention_stack.append(v)
 
