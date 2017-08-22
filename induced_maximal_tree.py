@@ -1,4 +1,4 @@
-load('graph_border.py')
+from graph_border import GraphBorder
 
 def ComputeL(G):
     """Compute the maximal number of leaves that can be obtain in a tree
