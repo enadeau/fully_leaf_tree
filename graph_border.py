@@ -1,3 +1,6 @@
+from collections import deque
+import heapq
+
 class GraphBorder():
     r"""
     Object represent a induced subtree of a graph and the surrounding of this subtree.
@@ -172,18 +175,96 @@ class GraphBorder():
         else:
             return self.num_leaf
 
-    def leaf_potential(self,i):
+    def subtree_vertices(self):
+        r"""
+        Generates the vertices in the subtree
+        """
+        for u in self.graph.vertex_iterator():
+            (state,info) = self.vertex_status[u]
+            if state == 's':
+                yield (u,info)
+
+    def degree(self, u, exclude='r'):
+        return sum(1 for v in self.graph.neighbor_iterator(u)
+                     if self.vertex_status[v][0] not in exclude)
+
+    def non_subtree_vertices_by_distance(self):
+        r"""
+        Returns a partition of the non subtree vertices with respect to their
+        distance from the subtree internal vertices.
+        """
+        vertices = []
+        visited = set()
+        queue = deque()
+        for (u,d) in self.subtree_vertices():
+            if d > 1: queue.append((u,0))
+        for (u,d) in self.subtree_vertices():
+            if d == 1: queue.append((u,1))
+        layer = []
+        prev_d = 0
+        while queue:
+            (u,d) = queue.popleft()
+            if 1 <= prev_d and prev_d < d:
+                vertices.append(layer)
+                layer = []
+            if self.vertex_status[u][0] != 's':
+                layer.append(u)
+            prev_d = d
+            if not u in visited:
+                visited.add(u)
+                for v in self.graph.neighbor_iterator(u):
+                    if self.vertex_status[v][0] != 'r' and not v in visited:
+                        queue.append((v,d+1))
+        return vertices
+
+    def leaf_potential_dist(self,i):
+        assert self.subtree_size > 2
+        current_size = self.subtree_size
+        current_leaf = self.num_leaf
+        vertices_by_dist = self.non_subtree_vertices_by_distance()
+        if current_size + len(vertices_by_dist[0]) >= i:
+            current_leaf += i - current_size
+        else:
+            current_leaf += len(vertices_by_dist[0])
+            priority_queue = [(-self.degree(u),u) for u in vertices_by_dist[0]]
+            current_dist = 1
+            if not priority_queue:
+                priority_queue = [(-self.degree(u),u) for u in vertices_by_dist[1]]
+                current_dist += 1
+            heapq.heapify(priority_queue)
+            while priority_queue and current_size < i:
+                (d,u) = heapq.heappop(priority_queue)
+                d = -d
+                if current_dist < len(vertices_by_dist):
+                    for v in vertices_by_dist[current_dist]:
+                        heapq.heappush(priority_queue, (-self.degree(v),v))
+                current_dist += 1
+                if current_size + d - 1 < i:
+                    current_size += d - 1
+                    current_leaf += d - 2
+                else:
+                    current_size += d - 1
+                    current_leaf += i - current_size
+        return current_leaf
+
+    def leaf_potential_weak(self,i):
         r"""
         Evaluate a maximal potential number of leaf for a subtree of i
         vertices build from the current subtree
 
         The size of the tree must be bigger than the current tree size.
         """
-        assert i>=self.subtree_size, "The size of the tree is not big enough"
         if self.subtree_size<=i and i<=self.subtree_size+self.border_size:
             return self.num_leaf+i-self.subtree_size
         elif i>self.subtree_size+self.border_size:
             return self.num_leaf+i-self.subtree_size-1
+
+    def leaf_potential(self,i):
+        assert i>=self.subtree_size, "The size of the tree is not big enough"
+        if self.subtree_size == 2:
+            return self.leaf_potential_weak(i)
+        else:
+            return self.leaf_potential_dist(i)
 
     def plot(self):
         r"""
@@ -221,3 +302,10 @@ class GraphBorder():
 
     def __repr__(self):
         return "subtree_size: %s, num_leaf: %s, border_size: %s, num_rejected: %s," %(self.subtree_size,self.num_leaf, self.border_size, self.num_rejected)
+
+
+# Testing
+G = graphs.PetersenGraph()
+B = GraphBorder(G)
+B.add_to_subtree(B.vertex_to_add())
+B.add_to_subtree(B.vertex_to_add())
