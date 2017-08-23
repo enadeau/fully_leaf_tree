@@ -37,7 +37,7 @@ class GraphBorder():
         is on top.
     """
 
-    def __init__(self, G):
+    def __init__(self, G, upper_bound_strategy):
         r"""
         Constructor of the graph border. Initialize the state of all vertices
         to ("a", None)
@@ -49,6 +49,7 @@ class GraphBorder():
         self.subtree_size=0
         self.num_rejected=0
         self.user_intervention_stack=[]
+        self.upper_bound_strategy = upper_bound_strategy
         for v in G.vertex_iterator():
             self.vertex_status[v]=("a", None)
 
@@ -222,13 +223,15 @@ class GraphBorder():
         current_size = self.subtree_size
         current_leaf = self.num_leaf
         vertices_by_dist = self.non_subtree_vertices_by_distance()
-        if current_size + len(vertices_by_dist[0]) >= i:
+        if len(vertices_by_dist) == 0:
+            pass
+        elif current_size + len(vertices_by_dist[0]) >= i:
             current_leaf += i - current_size
         else:
             current_leaf += len(vertices_by_dist[0])
             priority_queue = [(-self.degree(u),u) for u in vertices_by_dist[0]]
             current_dist = 1
-            if not priority_queue:
+            if not priority_queue and len(vertices_by_dist) >= 2:
                 priority_queue = [(-self.degree(u),u) for u in vertices_by_dist[1]]
                 current_dist += 1
             heapq.heapify(priority_queue)
@@ -261,7 +264,7 @@ class GraphBorder():
 
     def leaf_potential(self,i):
         assert i>=self.subtree_size, "The size of the tree is not big enough"
-        if self.subtree_size == 2:
+        if self.upper_bound_strategy == 'naive' or self.subtree_size <= 2:
             return self.leaf_potential_weak(i)
         else:
             return self.leaf_potential_dist(i)
@@ -302,10 +305,3 @@ class GraphBorder():
 
     def __repr__(self):
         return "subtree_size: %s, num_leaf: %s, border_size: %s, num_rejected: %s," %(self.subtree_size,self.num_leaf, self.border_size, self.num_rejected)
-
-
-# Testing
-G = graphs.PetersenGraph()
-B = GraphBorder(G)
-B.add_to_subtree(B.vertex_to_add())
-B.add_to_subtree(B.vertex_to_add())

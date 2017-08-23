@@ -1,6 +1,6 @@
 from graph_border import GraphBorder
 
-def ComputeL(G):
+def ComputeL(G, upper_bound_strategy='dist'):
     """Compute the maximal number of leaves that can be obtain in a tree
      wich is an induced subgraph of size m of G for each m between 0 and
      |G|.
@@ -49,6 +49,6 @@ def ComputeL(G):
 
     n=G.num_verts()
     L=dict([(i,0) for i in range(0,n+1)])
-    B=GraphBorder(G)
+    B=GraphBorder(G, upper_bound_strategy)
     treat_state()
     return L
