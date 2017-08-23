@@ -6,6 +6,11 @@ class GraphBorder():
     Object represent a induced subtree of a graph and the surrounding of this subtree.
     The data structure also catch up a bit of the evolution of the tree over time.
 
+    INPUT:
+        G - The graph
+        upper_bound_strategy - The strategy for the upper bound (either 'naive' or
+            'dist')
+
     ATTRIBUTES:
         vertex_status: Dictionnary that store the state of each vertices with options.
         The status of a vertex v is of the form:
@@ -49,6 +54,7 @@ class GraphBorder():
         self.subtree_size=0
         self.num_rejected=0
         self.user_intervention_stack=[]
+        assert upper_bound_strategy in ['naive', 'dist']
         self.upper_bound_strategy = upper_bound_strategy
         for v in G.vertex_iterator():
             self.vertex_status[v]=("a", None)

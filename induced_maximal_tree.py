@@ -7,6 +7,8 @@ def ComputeL(G, upper_bound_strategy='dist'):
 
     INPUT:
         G - a graph
+        upper_bound_strategy - The strategy for the upper bound (either
+            'dist' or 'naive')
 
     OUTPUT:
         A dictionnary L that associate to the number of vertices, the
@@ -47,6 +49,7 @@ def ComputeL(G, upper_bound_strategy='dist'):
             treat_state()
             B.undo_last_user_action()
 
+    assert upper_bound_strategy in ['naive', 'dist']
     n=G.num_verts()
     L=dict([(i,0) for i in range(0,n+1)])
     B=GraphBorder(G, upper_bound_strategy)
