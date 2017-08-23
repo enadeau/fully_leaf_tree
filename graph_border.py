@@ -42,13 +42,14 @@ class GraphBorder():
         is on top.
     """
 
-    def __init__(self, G, upper_bound_strategy):
+    def __init__(self, G, i, upper_bound_strategy):
         r"""
         Constructor of the graph border. Initialize the state of all vertices
         to ("a", None)
         """
         self.vertex_status=dict()
         self.graph=G
+        self.i = i
         self.num_leaf=0
         self.border_size=0
         self.subtree_size=0
@@ -224,15 +225,15 @@ class GraphBorder():
                         queue.append((v,d+1))
         return vertices
 
-    def leaf_potential_dist(self,i):
+    def leaf_potential_dist(self):
         assert self.subtree_size > 2
         current_size = self.subtree_size
         current_leaf = self.num_leaf
         vertices_by_dist = self.non_subtree_vertices_by_distance()
         if len(vertices_by_dist) == 0:
             pass
-        elif current_size + len(vertices_by_dist[0]) >= i:
-            current_leaf += i - current_size
+        elif current_size + len(vertices_by_dist[0]) >= self.i:
+            current_leaf += self.i - current_size
         else:
             current_leaf += len(vertices_by_dist[0])
             priority_queue = [(-self.degree(u),u) for u in vertices_by_dist[0]]
@@ -241,39 +242,39 @@ class GraphBorder():
                 priority_queue = [(-self.degree(u),u) for u in vertices_by_dist[1]]
                 current_dist += 1
             heapq.heapify(priority_queue)
-            while priority_queue and current_size < i:
+            while priority_queue and current_size < self.i:
                 (d,u) = heapq.heappop(priority_queue)
                 d = -d
                 if current_dist < len(vertices_by_dist):
                     for v in vertices_by_dist[current_dist]:
                         heapq.heappush(priority_queue, (-self.degree(v),v))
                 current_dist += 1
-                if current_size + d - 1 < i:
+                if current_size + d - 1 < self.i:
                     current_size += d - 1
                     current_leaf += d - 2
                 else:
                     current_size += d - 1
-                    current_leaf += i - current_size
+                    current_leaf += self.i - current_size
         return current_leaf
 
-    def leaf_potential_weak(self,i):
+    def leaf_potential_weak(self):
         r"""
         Evaluate a maximal potential number of leaf for a subtree of i
         vertices build from the current subtree
 
         The size of the tree must be bigger than the current tree size.
         """
-        if self.subtree_size<=i and i<=self.subtree_size+self.border_size:
-            return self.num_leaf+i-self.subtree_size
-        elif i>self.subtree_size+self.border_size:
-            return self.num_leaf+i-self.subtree_size-1
+        if self.subtree_size<=self.i and self.i<=self.subtree_size+self.border_size:
+            return self.num_leaf+self.i-self.subtree_size
+        elif self.i>self.subtree_size+self.border_size:
+            return self.num_leaf+self.i-self.subtree_size-1
 
     def leaf_potential(self,i):
-        assert i>=self.subtree_size, "The size of the tree is not big enough"
+        assert self.i>=self.subtree_size, "The size of the tree is not big enough"
         if self.upper_bound_strategy == 'naive' or self.subtree_size <= 2:
-            return self.leaf_potential_weak(i)
+            return self.leaf_potential_weak()
         else:
-            return self.leaf_potential_dist(i)
+            return self.leaf_potential_dist()
 
     def plot(self):
         r"""
