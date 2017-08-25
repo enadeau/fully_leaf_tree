@@ -54,6 +54,8 @@ class GraphBorder():
         self.subtree_size=0
         self.num_rejected=0
         self.user_intervention_stack=[]
+        self.subtree_vertices=[]
+        self.lp_dist_valid=False
         assert upper_bound_strategy in ['naive', 'dist']
         self.upper_bound_strategy = upper_bound_strategy
         for v in G.vertex_iterator():
@@ -105,9 +107,11 @@ class GraphBorder():
             self.border_size-=1
         else: #The vertex is the first vertex to be set to "s"
             self.vertex_status[v]=("s",0)
+        self.subtree_vertices.append(v)
         self.num_leaf+=1
         self.subtree_size+=1
         self.user_intervention_stack.append(v)
+        self.lp_dist_valid=False
 
     def _remove_last_addition(self,v):
         r"""
@@ -136,6 +140,7 @@ class GraphBorder():
         else: #We remove the last vertex from the subtree
             self.vertex_status[v]=("a",None)
         self.num_leaf-=1
+        self.subtree_vertices.pop()
 
     def reject_vertex(self,v):
         r"""
@@ -150,6 +155,7 @@ class GraphBorder():
             self.border_size-=1
         self.num_rejected+=1
         self.user_intervention_stack.append(v)
+        self.lp_dist_valid=False
 
     def _unreject_last_manual_rejection(self,v):
         r"""
@@ -168,6 +174,7 @@ class GraphBorder():
         or a rejection.
         """
         v=self.user_intervention_stack.pop()
+        self.lp_dist_valid=False
         if self.vertex_status[v][0]=="s":
             self._remove_last_addition(v)
         else:
@@ -182,14 +189,13 @@ class GraphBorder():
         else:
             return self.num_leaf
 
-    def subtree_vertices(self):
+    def subtree_vertices_with_degrees(self):
         r"""
-        Generates the vertices in the subtree
+        Generates the subtree vertices with their degree 
+        in pair (vertex, degree)
         """
-        for u in self.graph.vertex_iterator():
-            (state,info) = self.vertex_status[u]
-            if state == 's':
-                yield (u,info)
+        for v in self.subtree_vertices:
+            yield (v, self.vertex_status[v][1])
 
     def degree(self, u, exclude='r'):
         return sum(1 for v in self.graph.neighbor_iterator(u)
@@ -203,58 +209,70 @@ class GraphBorder():
         vertices = []
         visited = set()
         queue = deque()
-        for (u,d) in self.subtree_vertices():
+        for (u,d) in self.subtree_vertices_with_degrees():
             if d > 1: queue.append((u,0))
-        for (u,d) in self.subtree_vertices():
+        for (u,d) in self.subtree_vertices_with_degrees():
             if d == 1: queue.append((u,1))
         layer = []
         prev_d = 0
         while queue:
-            (u,d) = queue.popleft()
-            if 1 <= prev_d and prev_d < d:
-                vertices.append(layer)
-                layer = []
-            if self.vertex_status[u][0] != 's':
-                layer.append(u)
-            prev_d = d
-            if not u in visited:
+            (u, d) = queue.popleft()
+            if u not in visited:
+                if 1 <= prev_d and prev_d < d:
+                    vertices.append(layer)
+                    layer = []
+                if self.vertex_status[u][0] != 's':
+                    layer.append(u)
+                prev_d = d
                 visited.add(u)
                 for v in self.graph.neighbor_iterator(u):
                     if self.vertex_status[v][0] != 'r' and not v in visited:
                         queue.append((v,d+1))
+        vertices.append(layer)
         return vertices
 
     def leaf_potential_dist(self,i):
         assert self.subtree_size > 2
+        if self.lp_dist_valid:
+            if self.lp_dist_dict.has_key(i):
+                return self.lp_dist_dict[i]
+            else: return 0
+        #Else we compute the dictionnary
         current_size = self.subtree_size
         current_leaf = self.num_leaf
+        self.lp_dist_dict = dict()
+        self.lp_dist_dict[current_size]=current_leaf
         vertices_by_dist = self.non_subtree_vertices_by_distance()
-        if len(vertices_by_dist) == 0:
-            pass
-        elif current_size + len(vertices_by_dist[0]) >= i:
-            current_leaf += i - current_size
-        else:
-            current_leaf += len(vertices_by_dist[0])
-            priority_queue = [(-self.degree(u),u) for u in vertices_by_dist[0]]
-            current_dist = 1
-            if not priority_queue and len(vertices_by_dist) >= 2:
-                priority_queue = [(-self.degree(u),u) for u in vertices_by_dist[1]]
-                current_dist += 1
-            heapq.heapify(priority_queue)
-            while priority_queue and current_size < i:
-                (d,u) = heapq.heappop(priority_queue)
-                d = -d
-                if current_dist < len(vertices_by_dist):
-                    for v in vertices_by_dist[current_dist]:
-                        heapq.heappush(priority_queue, (-self.degree(v),v))
-                current_dist += 1
-                if current_size + d - 1 < i:
-                    current_size += d - 1
-                    current_leaf += d - 2
-                else:
-                    current_size += d - 1
-                    current_leaf += i - current_size
-        return current_leaf
+        max_size = self.subtree_size + sum(len(layer) for layer in vertices_by_dist)
+        #Adding the leaf creator
+        for _ in vertices_by_dist[0]:
+            current_size += 1
+            current_leaf += 1
+            self.lp_dist_dict[current_size] = current_leaf
+        current_dist = 1
+        priority_queue = [(-self.degree(u), u) for u in vertices_by_dist[0]]
+        if not priority_queue and len(vertices_by_dist) >= 2:
+            priority_queue = [(-self.degree(u), u) for u in vertices_by_dist[1]]
+            current_dist = 2
+        heapq.heapify(priority_queue)
+        while current_size < max_size:
+            (d, u) = heapq.heappop(priority_queue)
+            d = -d
+            current_size += 1
+            self.lp_dist_dict[current_size] = current_leaf
+            if current_dist < len(vertices_by_dist):
+                for v in vertices_by_dist[current_dist]:
+                    heapq.heappush(priority_queue, (-self.degree(v), v))
+            current_dist += 1
+            current_leaf -= 1
+            for _ in range(d-1):
+                if current_size==max_size:
+                    break
+                current_size += 1
+                current_leaf += 1
+                self.lp_dist_dict[current_size] = current_leaf
+        self.lp_dist_valid = True
+        return self.leaf_potential_dist(i)
 
     def leaf_potential_weak(self,i):
         r"""
