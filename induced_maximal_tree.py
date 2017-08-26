@@ -1,4 +1,5 @@
 load('graph_border.py')
+from datetime import datetime
 
 def ComputeL(G):
     """Compute the maximal number of leaves that can be obtain in a tree
@@ -121,5 +122,8 @@ def CubeGraphLeafFunction(d):
         if not i==d:
             B.add_to_subtree(extension_vertex)
         treat_state(i)
-        print "%s-pode complete" %i
+        print "Exploration for %s-pode complete at %s" %(i, str(datetime.now()))
+        name = "L-dict-after-"+str(i)+"-pode.sobj"
+        save(L, name)
+        print "%s saved" %name
     return L
