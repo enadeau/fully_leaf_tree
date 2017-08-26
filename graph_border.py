@@ -212,17 +212,22 @@ class GraphBorder():
         prev_d = 0
         while queue:
             (u,d) = queue.popleft()
-            if 1 <= prev_d and prev_d < d:
-                vertices.append(layer)
-                layer = []
-            if self.vertex_status[u][0] != 's':
-                layer.append(u)
-            prev_d = d
-            if not u in visited:
+            if u in visited:
+                pass
+            else:
+                if 1 <= prev_d and prev_d < d:
+                    vertices.append(layer)
+                    layer = []
+                if self.vertex_status[u][0] != 's':
+                    print u
+                    layer.append(u)
+                prev_d = d
                 visited.add(u)
                 for v in self.graph.neighbor_iterator(u):
                     if self.vertex_status[v][0] != 'r' and not v in visited:
+                        print (u, v)
                         queue.append((v,d+1))
+        vertices.append(layer)
         return vertices
 
     def leaf_potential_dist(self):
