@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 from graph_border import GraphBorder
-=======
-load('graph_border.py')
 from datetime import datetime
->>>>>>> specialize_cube
 
 def ComputeL(G, upper_bound_strategy='dist'):
     """Compute the maximal number of leaves that can be obtain in a tree
@@ -88,7 +84,11 @@ def CubeGraphLeafFunction(d, upper_bound_strategy):
         next_vertex=B.vertex_to_add()
         if next_vertex==None:
             #The subtree can't be extend
-            L[m]=max(L[m],l)
+            if L[m] == l:
+                max_leafed_tree[m].append(B.subtree_vertices)
+            elif L[m] < l:
+                max_leafed_tree[m] = [B.subtree_vertices]
+                L[m] = l
         elif promising:
             degree=B.add_to_subtree(next_vertex)
             if degree<=i:
@@ -107,6 +107,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy):
     G=graphs.CubeGraph(d)
     n=G.num_verts()
     L=dict([(i,0) for i in range(n+1)])
+    max_leafed_tree=dict([(i,[]) for i in range(n+1)])
     #Initialization for small value
     L[2]=2
     for i in range(3,d+2):
@@ -134,4 +135,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy):
         name = "L-dict-after-"+str(i)+"-pode.sobj"
         save(L, name)
         print "%s saved" %name
-    return L
+        name = "Max-leafed-tree-after"+str(i)+"-pode.sobj"
+        save(max_leafed_tree, name)
+        print "%s saved" %name
+    return L, max_leafed_tree
