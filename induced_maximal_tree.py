@@ -56,7 +56,7 @@ def ComputeL(G, upper_bound_strategy='dist'):
     treat_state()
     return L
 
-def CubeGraphLeafFunction(d):
+def CubeGraphLeafFunction(d, upper_bound_strategy):
     r"""
     Compute the leaf function for the cube graph of dimension d
 
@@ -92,6 +92,7 @@ def CubeGraphLeafFunction(d):
             B.reject_vertex(next_vertex)
             treat_state(max_deg)
             B.undo_last_user_action()
+
     #Number of vertices in the biggest induced snake in cube
     #See http://ai1.ai.uga.edu/sib/sibwiki/doku.php/records
     snake_in_the_box={1: 2, 2: 3, 3: 5, 4: 8, 5: 14, 6: 27, 7: 51, 8: 99}
@@ -114,7 +115,7 @@ def CubeGraphLeafFunction(d):
 
     for i in range(d,2,-1):
         #Initialization of a starting configuration with a i-pode
-        B=GraphBorder(G)
+        B=GraphBorder(G, upper_bound_strategy)
         B.add_to_subtree(base_vertex)
         for j in range(d):
             if j<i:
@@ -124,5 +125,5 @@ def CubeGraphLeafFunction(d):
         if not i==d:
             B.add_to_subtree(extension_vertex)
         treat_state(i)
-        print "%s-pode complete" %i
+        print "%s-pode completed at %s" %i
     return L
