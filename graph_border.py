@@ -218,10 +218,11 @@ class GraphBorder():
         vertices = []
         visited = set()
         queue = deque()
+        leaves = []
         for (u,d) in self.subtree_vertices_with_degrees():
             if d > 1: queue.append((u,0))
-        for (u,d) in self.subtree_vertices_with_degrees():
-            if d == 1: queue.append((u,1))
+            elif d==1: leaves.append((u,1))
+        queue.extend(leaves)
         #This if is used to speed up vertex_to_add
         if queue:
             self.border_vertex = queue[0][0]
