@@ -56,11 +56,11 @@ class GraphBorder():
         self.user_intervention_stack=[]
         self.subtree_vertices=[]
         self.lp_dist_valid=False
-        self.border_vertex=0
         assert upper_bound_strategy in ['naive', 'dist']
         self.upper_bound_strategy = upper_bound_strategy
         for v in G.vertex_iterator():
             self.vertex_status[v]=("a", None)
+        self.border_vertex=v
 
     def vertex_to_add(self):
         r"""
