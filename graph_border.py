@@ -56,6 +56,7 @@ class GraphBorder():
         self.user_intervention_stack=[]
         self.subtree_vertices=[]
         self.lp_dist_valid=False
+        self.border_vertex=0
         assert upper_bound_strategy in ['naive', 'dist']
         self.upper_bound_strategy = upper_bound_strategy
         for v in G.vertex_iterator():
@@ -67,7 +68,9 @@ class GraphBorder():
         Return any vertex if the subtree is empty.
         Return None if the current solution can't be extend.
         """
-        if self.subtree_size==0:
+        if self.vertex_status[self.border_vertex][0]=="b":
+            return self.border_vertex
+        elif self.subtree_size==0:
             #The subtree is empty, any non rejected vertex can be add
             for v in self.vertex_status:
                 if self.vertex_status[v][0]=="a":
@@ -219,6 +222,9 @@ class GraphBorder():
             if d > 1: queue.append((u,0))
         for (u,d) in self.subtree_vertices_with_degrees():
             if d == 1: queue.append((u,1))
+        #This if is used to speed up vertex_to_add
+        if queue:
+            self.border_vertex = queue[0][0]
         layer = []
         prev_d = 0
         while queue:
