@@ -342,3 +342,21 @@ class GraphBorder():
 
     def __repr__(self):
         return "subtree_size: %s, num_leaf: %s, border_size: %s, num_rejected: %s," %(self.subtree_size,self.num_leaf, self.border_size, self.num_rejected)
+
+class GraphBorderForCube(GraphBorder):
+    r"""
+    Specilization of graph border classes for cube
+    """
+    def __init__(self, G, upper_bound_strategy, max_deg):
+        GraphBorder.__init__(self, G, upper_bound_strategy)
+        self.max_deg = max_deg
+
+    def degree(self, u, exclude='r'):
+        r"""
+        Compute the degree considering the maximum degree that is allowed
+        """
+        real_deg = sum(1 for v in self.graph.neighbor_iterator(u)
+                     if self.vertex_status[v][0] not in exclude)
+        return min(self.max_deg, real_deg)
+
+

@@ -114,14 +114,14 @@ def CubeGraphLeafFunction(d, upper_bound_strategy):
         L[i]=i-1
     #Initialization according to snake in the box
     if d<=8:
-        for i in range(2,snake_in_the_box[d]):
+        for i in range(2,snake_in_the_box[d]+1):
             L[i]=2
     else:
         raise ValueError, "d is too big, no chance of sucess"
 
     for i in range(d,2,-1):
         #Initialization of a starting configuration with a i-pode
-        B=GraphBorder(G, upper_bound_strategy)
+        B=GraphBorderForCube(G, upper_bound_strategy, i)
         B.add_to_subtree(base_vertex)
         for j in range(d):
             if j<i:
