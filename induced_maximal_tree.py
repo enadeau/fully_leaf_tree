@@ -85,9 +85,9 @@ def CubeGraphLeafFunction(d, upper_bound_strategy):
         if next_vertex==None:
             #The subtree can't be extend
             if L[m] == l:
-                max_leafed_tree[m].append(B.subtree_vertices)
+                max_leafed_tree[m].append(copy(B.subtree_vertices))
             elif L[m] < l:
-                max_leafed_tree[m] = [B.subtree_vertices]
+                max_leafed_tree[m] = [copy(B.subtree_vertices)]
                 L[m] = l
         elif promising:
             degree=B.add_to_subtree(next_vertex)
