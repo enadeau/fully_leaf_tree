@@ -210,6 +210,45 @@ class GraphBorder():
         return sum(1 for v in self.graph.neighbor_iterator(u)
                      if self.vertex_status[v][0] not in exclude)
 
+    def non_rejected_vertices_by_distance_with_degree(self):
+        r"""
+        Return a partition of the vertices that are not rejected with
+        respect to their distance from the subtree internal vertices.
+
+        The first layer is distance 1 which are the leaves and
+        the leaf creators.
+
+        The partition contains pairs (u, d) where u is the vertex
+        and d the degree of the u. The degree doesn't count rejected vertex.
+        """
+        assert self.subtree_size>2, "No inner vertices in the green tree"
+        vertices = []
+        visited = set()
+        queue = deque()
+        #Add inner vertices to the queue
+        queue.extend(((u, 0) for u in self.subtree_vertices\
+                if self.vertex_status[u][1]>1))
+        layer = []
+        prev_dist = 0
+        while queue:
+            (v, dist) = queue.popleft()
+            if v not in visited:
+                visited.add(v)
+                if prev_dist < dist:
+                    if prev_dist>0:
+                        vertices.append(layer)
+                    layer = []
+                degree = 0
+                for u in self.graph.neighbor_iterator(v):
+                    if self.vertex_status[u][0]!='r':
+                        degree += 1
+                        if u not in visited:
+                            queue.append((u, dist+1))
+                layer.append((v, degree))
+                prev_dist = dist
+        vertices.append(layer)
+        return vertices
+
     def non_subtree_vertices_by_distance(self):
         r"""
         Returns a partition of the non subtree vertices with respect to their
