@@ -1,4 +1,4 @@
-from graph_border import GraphBorder
+from graph_border import GraphBorder, GraphBorderForCube
 from datetime import datetime
 
 def ComputeL(G, upper_bound_strategy='dist'):
@@ -57,12 +57,14 @@ def ComputeL(G, upper_bound_strategy='dist'):
     treat_state()
     return L
 
-def CubeGraphLeafFunction(d, upper_bound_strategy):
+def CubeGraphLeafFunction(d, upper_bound_strategy='dist'):
     r"""
     Compute the leaf function for the cube graph of dimension d
 
     INPUT:
         d - dimension of the hypercube
+        upper_bound_strategy - The strategy for the bounding part.
+            Must be eiter 'dist' or 'naive'
 
     ALGORITHM:
         Use symmetry of the cube to partion the search state and minimizing 

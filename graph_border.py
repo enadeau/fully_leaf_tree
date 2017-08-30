@@ -315,12 +315,18 @@ class GraphBorder():
                         heapq.heappush(priority_queue, (-d, v))
                 current_dist += 1
             current_leaf -= 1
-            for _ in range(min(degree-1, max_size - current_size)):
+            for _ in range(min(self._max_degree(d) - 1, max_size - current_size)):
                 current_size += 1
                 current_leaf += 1
                 self.lp_dist_dict[current_size] = current_leaf
         self.lp_dist_valid = True
         return self.leaf_potential_dist(i)
+
+    def _max_degree(self, d):
+        r"""
+        Return the degree d since nothing bound the degree in a GraphBorder
+        """
+        return d
 
     def leaf_potential_weak(self,i):
         r"""
@@ -398,4 +404,9 @@ class GraphBorderForCube(GraphBorder):
                      if self.vertex_status[v][0] not in exclude)
         return min(self.max_deg, real_deg)
 
-
+    def _max_degree(self, d):
+        r"""
+        Return the minimum between the degree d and the max degree of the
+        GraphBorderForCube.
+        """
+        return min(self.max_deg, d)
