@@ -288,38 +288,34 @@ class GraphBorder():
         if self.lp_dist_valid:
             if self.lp_dist_dict.has_key(i):
                 return self.lp_dist_dict[i]
-            else: return 0
+            else:
+                return 0
         #Else we compute the dictionnary
         current_size = self.subtree_size
         current_leaf = self.num_leaf
         self.lp_dist_dict = dict()
         self.lp_dist_dict[current_size]=current_leaf
-        vertices_by_dist = self.non_subtree_vertices_by_distance()
-        max_size = self.subtree_size + sum(len(layer) for layer in vertices_by_dist)
+        vertices_by_dist = self.non_rejected_vertices_by_distance_with_degree()
         #Adding the leaf creator
-        for _ in vertices_by_dist[0]:
-            current_size += 1
-            current_leaf += 1
-            self.lp_dist_dict[current_size] = current_leaf
+        for (v, d) in vertices_by_dist[0]:
+            if self.vertex_status[v][0]=="b":
+                current_size += 1
+                current_leaf += 1
+                self.lp_dist_dict[current_size] = current_leaf
+        max_size = current_size + sum(len(layer) for layer in vertices_by_dist[1:])
         current_dist = 1
-        priority_queue = [(-self.degree(u), u) for u in vertices_by_dist[0]]
-        if not priority_queue and len(vertices_by_dist) >= 2:
-            priority_queue = [(-self.degree(u), u) for u in vertices_by_dist[1]]
-            current_dist = 2
+        priority_queue = [(-d, u) for (u, d) in vertices_by_dist[0] if d>1]
         heapq.heapify(priority_queue)
         while current_size < max_size:
             (d, u) = heapq.heappop(priority_queue)
-            d = -d
-            current_size += 1
-            self.lp_dist_dict[current_size] = current_leaf
+            degree = -d
             if current_dist < len(vertices_by_dist):
-                for v in vertices_by_dist[current_dist]:
-                    heapq.heappush(priority_queue, (-self.degree(v), v))
-            current_dist += 1
+                for (v, d) in vertices_by_dist[current_dist]:
+                    if d > 1:
+                        heapq.heappush(priority_queue, (-d, v))
+                current_dist += 1
             current_leaf -= 1
-            for _ in range(d-1):
-                if current_size==max_size:
-                    break
+            for _ in range(min(degree-1, max_size - current_size)):
                 current_size += 1
                 current_leaf += 1
                 self.lp_dist_dict[current_size] = current_leaf
@@ -339,6 +335,10 @@ class GraphBorder():
             return self.num_leaf+i-self.subtree_size-1
 
     def leaf_potential(self,i):
+        r"""
+        Compute an upper bound on the number of leaf that can be reach by
+        extending the current configuration to i vertices
+        """
         assert i>=self.subtree_size, "The size of the tree is not big enough"
         if self.upper_bound_strategy == 'naive' or self.subtree_size <= 2:
             return self.leaf_potential_weak(i)
