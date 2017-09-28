@@ -3,33 +3,30 @@ import heapq
 
 class GraphBorder():
     r"""
-    Object represent a induced subtree of a graph and the surrounding of this subtree.
-    The data structure also catch up a bit of the evolution of the tree over time.
+    Object that represent a induced subtree of a graph and the surrounding of
+    this subtree. The data structure also catch up a bit of the evolution of
+    the tree over time.
 
-    INPUT:
-        G - The graph
-        upper_bound_strategy - The strategy for the upper bound (either 'naive' or
-            'dist')
 
     ATTRIBUTES:
-        vertex_status: Dictionnary that store the state of each vertices with options.
-        The status of a vertex v is of the form:
-            - ("s",d) if v is in the subtree with degree d in the subtree;
-            - ("b",p) if v is not in the subtree and is adjacent to exactly one
+        vertex_status: Dictionnary that store the state of each vertices with
+        options. The status of a vertex v is of the form:
+            - ("s", d) if v is in the subtree with degree d in the subtree;
+            - ("b", p) if v is not in the subtree and is adjacent to exactly one
               vertex of the subtree which is p;
-            - ("r",i) if v rejected of the subtree. If i==v the vertex was voluntary rejected
-              from a potential subtree by the users. Otherwise it indicates that the addition
-              of the vertex v to the subtree will form a cycle since vertex i was add to
-              the subtree.
-            - ("a",None) if v can eventually be add to the subtree but his addition will
-              created a disconnected subgraph in the actual state (i.e v is not on the border
-              of the subtree)
+            - ("r", i) if v rejected of the subtree. If i==v the vertex was
+              voluntary rejected from a potential subtree by the users.
+              Otherwise it indicates that the addition of the vertex v to the
+              subtree will form a cycle since vertex i was add to the subtree.
+            - ("a", None) if v can eventually be add to the subtree but his
+              addition will created a disconnected subgraph in the actual state
+              (i.e v is not on the border of the subtree)
 
         graph: The graph used to induced the subtree
 
-        num_leaf: The number of leaves of the subtree. Note that with this class a tree with only
-        one vertex is consider to have one leaf but the function subtree_num_leaf makes
-        the correction.
+        num_leaf: The number of leaves of the subtree. Note that with this class
+        a tree with only one vertex is consider to have one leaf but the
+        function subtree_num_leaf makes the correction.
 
         border_size: The number of vertices in the border
 
@@ -37,154 +34,180 @@ class GraphBorder():
 
         num_rejected: The number of vertices that are rejected
 
-        user_intervention_stack: Stack of the subtree vertices in the order of which the user
-        explicitly specify the state (by addition or rejection). Last vertex the user acts on
-        is on top.
+        user_intervention_stack: Stack of the subtree vertices in the order of
+        which the user explicitly specify the state (by addition or rejection).
+        Last vertex the user acts on is on top.
+
+        subtree_vertices: A list vertices that are in the subtree.
+
+        upper_bound_strategy: The strategy for the leaf potential. The leaf
+        potential is an upper bound on the number of leaves that a tree can
+        have if it grows from the current subtree. The strategy is either
+        'naive' or 'dist'.
+
+        lp_dist_dict: A dictionnary of the leaf potentential function of the
+        structures according to dist_strategy
+
+        lp_dist_valid: boolean indicating if the structure has change since last
+        computation of lp_dist_dict.
+
+        border_vertex: A vertex that is `probably` a border vertex
     """
 
-    def __init__(self, G, upper_bound_strategy):
+    def __init__(self, G, upper_bound_strategy='dist'):
         r"""
         Constructor of the graph border. Initialize the state of all vertices
         to ("a", None)
+
+        INPUT:
+            G - The graph
+            upper_bound_strategy - The strategy for the leaf potential (either
+                'naive' or 'dist')
         """
-        self.vertex_status=dict()
-        self.graph=G
-        self.num_leaf=0
-        self.border_size=0
-        self.subtree_size=0
-        self.num_rejected=0
-        self.user_intervention_stack=[]
-        self.subtree_vertices=[]
-        self.lp_dist_valid=False
+        self.vertex_status = dict()
+        self.graph = G
+        self.num_leaf = 0
+        self.border_size = 0
+        self.subtree_size = 0
+        self.num_rejected = 0
+        self.user_intervention_stack = []
+        self.subtree_vertices = []
+        self.lp_dist_valid = False
         assert upper_bound_strategy in ['naive', 'dist']
         self.upper_bound_strategy = upper_bound_strategy
         for v in G.vertex_iterator():
-            self.vertex_status[v]=("a", None)
-        self.border_vertex=v
+            self.vertex_status[v] = ("a", None)
+        self.border_vertex = v
 
     def vertex_to_add(self):
         r"""
-        Return a vertex of the graph that can extend the current solution into a tree.
-        Return any vertex if the subtree is empty.
-        Return None if the current solution can't be extend.
+        Return a vertex of the graph that can extend the current solution into a
+        tree. If the subtree is empty, it's any non-rejected vertex. If the
+        current solution can't be extend returns None. Otherwise, return a
+        border vertex.
         """
-        if self.vertex_status[self.border_vertex][0]=="b":
+        if self.vertex_status[self.border_vertex][0] == "b":
             return self.border_vertex
-        elif self.subtree_size==0:
+        elif self.subtree_size == 0:
             #The subtree is empty, any non rejected vertex can be add
             for v in self.vertex_status:
-                if self.vertex_status[v][0]=="a":
+                if self.vertex_status[v][0] == "a":
                     return v
         else:
-            #The subtree is unempty, a vertex of the border must be add
+            #The subtree is not empty, a vertex of the border must be add
             for v in self.vertex_status:
                 if self.vertex_status[v][0]=="b":
                     return v
         return None
 
-    def add_to_subtree(self,v):
+    def add_to_subtree(self, v):
         r"""
-        Add a vertex of the border to the current solution or initiate a solution
-        with a first vertex.
+        Add a vertex of the border to the current solution or initiate a
+        solution with a first vertex.
 
-        INPUTS:
-            v - A vertex of the border or if the subtree is empty any available vertex
+        INPUT:
+            v - A vertex of the border or if the subtree is empty any available
+                vertex
 
         OUTPUT:
-            Degree of the vertex v is attached to
+            Degree of the parent of v after the addition
         """
-        assert self.vertex_status[v][0]=="b" or ("b",None) not in self.vertex_status.values()
-        degree=0
+        assert self.vertex_status[v][0] == "b" or ("b", None) not in \
+                self.vertex_status.values(), "Invalid vertex to add"
+        degree = 0
         for u in self.graph.neighbor_iterator(v):
-            (state,info)=self.vertex_status[u]
-            if state=="a":
-                self.vertex_status[u]=("b",None)
-                self.border_size+=1
-            elif state=="s":
-                degree=info+1
-                self.vertex_status[u]=(state,degree)
-                if info==1:
-                    self.num_leaf-=1
-            elif state=="b":
-                self.border_size-=1
-                self.num_rejected+=1
-                self.vertex_status[u]=("r",v)
+            (state, info) = self.vertex_status[u]
+            if state == "a":
+                self.vertex_status[u] = ("b", None)
+                self.border_size += 1
+            elif state == "s":
+                degree = info+1
+                self.vertex_status[u] = (state, degree)
+                if info == 1:
+                    self.num_leaf -= 1
+            elif state == "b":
+                self.border_size -= 1
+                self.num_rejected += 1
+                self.vertex_status[u] = ("r", v)
             #If the vertices is already rejected we do nothing
-        if self.vertex_status[v][0]=="b": #The vertex extend a current solution
-            self.vertex_status[v]=("s",1)
-            self.border_size-=1
-        else: #The vertex is the first vertex to be set to "s"
-            self.vertex_status[v]=("s",0)
+        if self.vertex_status[v][0] == "b":
+            #The vertex extend a current solution
+            self.vertex_status[v] = ("s", 1)
+            self.border_size -= 1
+        else:
+            #The vertex is the first vertex to be set to "s"
+            self.vertex_status[v] = ("s", 0)
         self.subtree_vertices.append(v)
-        self.num_leaf+=1
-        self.subtree_size+=1
+        self.num_leaf += 1
+        self.subtree_size += 1
         self.user_intervention_stack.append(v)
-        self.lp_dist_valid=False
+        self.lp_dist_valid = False
         return degree
 
-    def _remove_last_addition(self,v):
+    def _remove_last_addition(self, v):
         r"""
-        Removes the last inserted vertex v to the subtree.
+        Reverts the last addition process. v must be the last added vertex and
+        the addition must be the last modification to the structure.
         """
         for u in self.graph.neighbor_iterator(v):
-            (state,info)=self.vertex_status[u]
+            (state, info) = self.vertex_status[u]
             #Impossible that state is available
-            if state=="b":
-                self.vertex_status[u]=("a", None)
-                self.border_size-=1
-            elif state=="s":
-                self.vertex_status[u]=(state,info-1)
-                if info==2:
-                    self.num_leaf+=1
+            if state == "b":
+                self.vertex_status[u] = ("a", None)
+                self.border_size -= 1
+            elif state == "s":
+                self.vertex_status[u] = (state, info-1)
+                if info == 2:
+                    self.num_leaf += 1
             #At this point the state must be "r"
-            elif info==v:
-                self.vertex_status[u]=("b", None)
-                self.num_rejected-=1
-                self.border_size+=1
-
-        self.subtree_size-=1
-        if self.subtree_size>0:
-            self.vertex_status[v]=("b", None)
-            self.border_size+=1
+            elif info == v:
+                self.vertex_status[u] = ("b", None)
+                self.num_rejected -= 1
+                self.border_size += 1
+        self.subtree_size -= 1
+        if self.subtree_size > 0:
+            self.vertex_status[v] = ("b", None)
+            self.border_size += 1
         else: #We remove the last vertex from the subtree
-            self.vertex_status[v]=("a",None)
-        self.num_leaf-=1
+            self.vertex_status[v] = ("a", None)
+        self.num_leaf -= 1
         self.subtree_vertices.pop()
 
-    def reject_vertex(self,v):
+    def reject_vertex(self, v):
         r"""
         Sets a vertex that is not in the solution to rejected.
         When a vertex v has been rejected using this method,
         his value in vertex_status is set to ("r",v)
         """
-        assert self.vertex_status[v][0]=="b" or self.subtree_size==0
-        self.vertex_status[v]=("r",v)
-        if self.subtree_size!=0:
+        assert self.vertex_status[v][0] == "b" or self.subtree_size == 0
+        self.vertex_status[v] = ("r", v)
+        if self.subtree_size != 0:
             #The element we reject is on the border
-            self.border_size-=1
-        self.num_rejected+=1
+            self.border_size -= 1
+        self.num_rejected += 1
         self.user_intervention_stack.append(v)
-        self.lp_dist_valid=False
+        self.lp_dist_valid = False
 
-    def _unreject_last_manual_rejection(self,v):
+    def _unreject_last_manual_rejection(self, v):
         r"""
-        Cancel the last manual rejection. Vertex v must be te last rejected vertex.
+        Reverts the last manual rejection. v must be the last rejected vertex
+        and the rejection must be the last modification to the structure.
         """
-        self.num_rejected-=1
-        if self.subtree_size==0:
-            self.vertex_status[v]=("a",None)
+        self.num_rejected -= 1
+        if self.subtree_size == 0:
+            self.vertex_status[v] = ("a", None)
         else:
-            self.vertex_status[v]=("b",None)
-            self.border_size+=1
+            self.vertex_status[v] = ("b", None)
+            self.border_size += 1
 
     def undo_last_user_action(self):
         r"""
-        Undo the last user intervention which is either and addition to the subtree
-        or a rejection.
+        Undo the last user intervention which is either and addition to the
+        subtree or a rejection.
         """
-        v=self.user_intervention_stack.pop()
-        self.lp_dist_valid=False
-        if self.vertex_status[v][0]=="s":
+        v = self.user_intervention_stack.pop()
+        self.lp_dist_valid = False
+        if self.vertex_status[v][0] == "s":
             self._remove_last_addition(v)
         else:
             self._unreject_last_manual_rejection(v)
@@ -193,14 +216,14 @@ class GraphBorder():
         r"""
         Return the number of leaf in the subtree
         """
-        if self.subtree_size==1:
+        if self.subtree_size == 1:
             return 0
         else:
             return self.num_leaf
 
     def subtree_vertices_with_degrees(self):
         r"""
-        Generates the subtree vertices with their degree 
+        Generates the subtree vertices with their degrees
         in pair (vertex, degree)
         """
         for v in self.subtree_vertices:
@@ -357,7 +380,7 @@ class GraphBorder():
 
         The vertex of the induced subtree are in green
         """
-        vertex_color={"blue": [], "yellow": [], "black": [], "red": [], "green": []} 
+        vertex_color={"blue": [], "yellow": [], "black": [], "red": [], "green": []}
         for v in self.graph.vertex_iterator():
             (state,info)=self.vertex_status[v]
             if state=="a":
@@ -371,7 +394,7 @@ class GraphBorder():
                     vertex_color["black"].append(v)
                 else:
                     vertex_color["red"].append(v)
-        
+
         tree_edge=[]
         for (u,v,label) in self.graph.edge_iterator():
             if self.vertex_status[v][0]=="s"==self.vertex_status[u][0]:
