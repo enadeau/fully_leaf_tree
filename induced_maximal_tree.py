@@ -65,7 +65,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy):
         d - dimension of the hypercube
 
     ALGORITHM:
-        Use symmetry of the cube to partion the search state and minimizing 
+        Use symmetry of the cube to partion the search state and minimizing
         the number of configuration to explore.
 
     EXAMPLES:
@@ -73,7 +73,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy):
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: 0, 7: 0, 8: 0}
     """
     def treat_state(max_deg):
-        """Explore all the possible subtree with maximum degree max_deg of G and 
+        """Explore all the possible subtree with maximum degree max_deg of G and
         update the dictionnary L to keep track of the maximum.
 
         Branchs with including/excluding a vertex of the subtree.
@@ -111,11 +111,11 @@ def CubeGraphLeafFunction(d, upper_bound_strategy):
     #Initialization for small value
     L[2]=2
     for i in range(3,d+2):
-        L[i]=i-1
+        L[i]=max(i-1, L[i])
     #Initialization according to snake in the box
     if d<=8:
         for i in range(2,snake_in_the_box[d]+1):
-            L[i]=2
+            L[i]=max(2, L[i])
     else:
         raise ValueError, "d is too big, no chance of sucess"
 
