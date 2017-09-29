@@ -1,7 +1,7 @@
 from collections import deque
 import heapq
 
-class GraphBorder():
+class GraphBorder(object):
     r"""
     Object that represent a induced subtree of a graph and the surrounding of
     this subtree. The data structure also catch up a bit of the evolution of
@@ -54,7 +54,7 @@ class GraphBorder():
         border_vertex: A vertex that is `probably` a border vertex
     """
 
-    def __init__(self, G, upper_bound_strategy='dist'):
+    def __init__(self, G, upper_bound_strategy = 'dist'):
         r"""
         Constructor of the graph border. Initialize the state of all vertices
         to ("a", None)
@@ -230,6 +230,10 @@ class GraphBorder():
             yield (v, self.vertex_status[v][1])
 
     def degree(self, u, exclude='r'):
+        r"""
+        Compute the degree of the vertices u in the graph border excluding
+        vertices with state in exlcude. Default value for exclude is 'r'
+        """
         return sum(1 for v in self.graph.neighbor_iterator(u)
                      if self.vertex_status[v][0] not in exclude)
 
@@ -238,8 +242,8 @@ class GraphBorder():
         Return a partition of the vertices that are not rejected with
         respect to their distance from the subtree internal vertices.
 
-        The first layer is distance 1 which are the leaves and
-        the leaf creators.
+        The first layer is distance 1 which are the leaves of the subtree and
+        the yellow vertices connected to inner vertices.
 
         The partition contains pairs (u, d) where u is the vertex
         and d the degree of the u. The degree doesn't count rejected vertex.
@@ -258,12 +262,12 @@ class GraphBorder():
             if v not in visited:
                 visited.add(v)
                 if prev_dist < dist:
-                    if prev_dist>0:
+                    if prev_dist > 0:
                         vertices.append(layer)
                     layer = []
                 degree = 0
                 for u in self.graph.neighbor_iterator(v):
-                    if self.vertex_status[u][0]!='r':
+                    if self.vertex_status[u][0] != 'r':
                         degree += 1
                         if u not in visited:
                             queue.append((u, dist+1))
@@ -283,7 +287,7 @@ class GraphBorder():
         leaves = []
         for (u,d) in self.subtree_vertices_with_degrees():
             if d > 1: queue.append((u,0))
-            elif d==1: leaves.append((u,1))
+            elif d == 1: leaves.append((u,1))
         queue.extend(leaves)
         #This if is used to speed up vertex_to_add
         if queue:
@@ -307,6 +311,12 @@ class GraphBorder():
         return vertices
 
     def leaf_potential_dist(self,i):
+        r"""
+        Compute an upper bound on the number of leaves that an extension of self
+        to i green vertices can reach.
+
+        Better bound then leaf_potential_weak but it takes more time to compute.
+        """
         assert self.subtree_size > 2
         if self.lp_dist_valid:
             if self.lp_dist_dict.has_key(i):
@@ -317,17 +327,17 @@ class GraphBorder():
         current_size = self.subtree_size
         current_leaf = self.num_leaf
         self.lp_dist_dict = dict()
-        self.lp_dist_dict[current_size]=current_leaf
+        self.lp_dist_dict[current_size] = current_leaf
         vertices_by_dist = self.non_rejected_vertices_by_distance_with_degree()
         #Adding the leaf creator
         for (v, d) in vertices_by_dist[0]:
-            if self.vertex_status[v][0]=="b":
+            if self.vertex_status[v][0] == "b":
                 current_size += 1
                 current_leaf += 1
                 self.lp_dist_dict[current_size] = current_leaf
         max_size = current_size + sum(len(layer) for layer in vertices_by_dist[1:])
         current_dist = 1
-        priority_queue = [(-d, u) for (u, d) in vertices_by_dist[0] if d>1]
+        priority_queue = [(-d, u) for (u, d) in vertices_by_dist[0] if d > 1]
         heapq.heapify(priority_queue)
         while current_size < max_size:
             (d, u) = heapq.heappop(priority_queue)
@@ -348,21 +358,21 @@ class GraphBorder():
     def leaf_potential_weak(self,i):
         r"""
         Evaluate a maximal potential number of leaf for a subtree of i
-        vertices build from the current subtree
+        vertices build from the current subtree.
 
         The size of the tree must be bigger than the current tree size.
         """
-        if self.subtree_size<=i and i<=self.subtree_size+self.border_size:
-            return self.num_leaf+i-self.subtree_size
-        elif i>self.subtree_size+self.border_size:
-            return self.num_leaf+i-self.subtree_size-1
+        if self.subtree_size <= i and i <= self.subtree_size + self.border_size:
+            return self.num_leaf + i - self.subtree_size
+        elif i > self.subtree_size + self.border_size:
+            return self.num_leaf + i - self.subtree_size - 1
 
-    def leaf_potential(self,i):
+    def leaf_potential(self, i):
         r"""
         Compute an upper bound on the number of leaf that can be reach by
         extending the current configuration to i vertices
         """
-        assert i>=self.subtree_size, "The size of the tree is not big enough"
+        assert i >= self.subtree_size, "The size of the tree is not big enough"
         if self.upper_bound_strategy == 'naive' or self.subtree_size <= 2:
             return self.leaf_potential_weak(i)
         else:
@@ -370,55 +380,73 @@ class GraphBorder():
 
     def plot(self):
         r"""
-        Plot a graph representation of the graph bordrer with following convention for
-        node colors:
-            green: The node is in the subtre
+        Plot a graph representation of the graph bordrer with following
+        convention for node colors:
+            green: The node is in the subtree
             yellow: The vertex is on the border
             red: The vertex is rejected by an other vertex
             black:The vertex is rejected by the user
             blue: If the vertex is available
 
-        The vertex of the induced subtree are in green
+        Edges of the subtree are green.
         """
-        vertex_color={"blue": [], "yellow": [], "black": [], "red": [], "green": []}
+        vertex_color = {"blue": [], "yellow": [], "black": [], "red": [], "green": []}
         for v in self.graph.vertex_iterator():
-            (state,info)=self.vertex_status[v]
-            if state=="a":
+            (state,info) = self.vertex_status[v]
+            if state == "a":
                 vertex_color["blue"].append(v)
-            elif state=="b":
+            elif state == "b":
                 vertex_color["yellow"].append(v)
-            elif state=="s":
+            elif state == "s":
                 vertex_color["green"].append(v)
             else: #state is "r"
-                if info==v:
+                if info == v:
                     vertex_color["black"].append(v)
                 else:
                     vertex_color["red"].append(v)
 
-        tree_edge=[]
-        for (u,v,label) in self.graph.edge_iterator():
-            if self.vertex_status[v][0]=="s"==self.vertex_status[u][0]:
+        tree_edge = []
+        for (u, v, label) in self.graph.edge_iterator():
+            if self.vertex_status[v][0] == "s" == self.vertex_status[u][0]:
                 tree_edge.append((u,v))
 
-        return self.graph.plot(vertex_colors=vertex_color, edge_colors={"green": tree_edge})
+        return self.graph.plot(vertex_colors=vertex_color,
+                edge_colors={"green": tree_edge})
 
     def __repr__(self):
-        return "subtree_size: %s, num_leaf: %s, border_size: %s, num_rejected: %s," %(self.subtree_size,self.num_leaf, self.border_size, self.num_rejected)
+        d = (self.subtree_size, self.num_leaf, self.border_size,
+                self.num_rejected)
+        s = "subtree_size:%s, num_leaf:%s, border_size:%s, num_rejected:%s" %d
+        return s
 
 class GraphBorderForCube(GraphBorder):
     r"""
     Specilization of graph border classes for cube
     """
-    def __init__(self, G, upper_bound_strategy, max_deg):
+    def __init__(self, G, max_deg, upper_bound_strategy = 'dist'):
+        r"""
+        Constructor of the graph border. Initialize the state of all vertices
+        to ("a", None).
+
+        INPUT:
+            G - The graph
+            max_deg - The maximal degree authorized for a vertex in the subtree
+            upper_bound_strategy - The strategy for the leaf potential (either
+                'naive' or 'dist')
+        """
+
         GraphBorder.__init__(self, G, upper_bound_strategy)
         self.max_deg = max_deg
 
     def degree(self, u, exclude='r'):
         r"""
-        Compute the degree considering the maximum degree that is allowed
+        Compute the degree considering the maximum degree that is allowed.
+
+        Vertex in exlcude, are not considered for the degree. Default value for exclude is 'r'
         """
-        real_deg = sum(1 for v in self.graph.neighbor_iterator(u)
-                     if self.vertex_status[v][0] not in exclude)
+        #real_deg = sum(1 for v in self.graph.neighbor_iterator(u)
+        #             if self.vertex_status[v][0] not in exclude)
+        real_deg = super(GraphBorderForCube, self).degree(u, exclude)
         return min(self.max_deg, real_deg)
 
 

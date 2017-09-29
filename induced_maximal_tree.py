@@ -131,7 +131,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist'):
 
     for i in range(d, 2, -1):
         #Initialization of a starting configuration with a i-pode
-        B = GraphBorderForCube(G, upper_bound_strategy, i)
+        B = GraphBorderForCube(G, i, upper_bound_strategy)
         B.add_to_subtree(base_vertex)
         for j in range(d):
             if j < i:
