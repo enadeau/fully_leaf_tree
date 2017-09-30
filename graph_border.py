@@ -310,6 +310,13 @@ class GraphBorder(object):
         vertices.append(layer)
         return vertices
 
+    def _max_degree(self, d):
+        r"""
+        Return d since nothing bound the degree  of a vertices in the subtree.
+        This method is itended to be redefine when useful
+        """
+        return d
+
     def leaf_potential_dist(self,i):
         r"""
         Compute an upper bound on the number of leaves that an extension of self
@@ -348,7 +355,8 @@ class GraphBorder(object):
                         heapq.heappush(priority_queue, (-d, v))
                 current_dist += 1
             current_leaf -= 1
-            for _ in range(min(degree-1, max_size - current_size)):
+            leaf_to_add = min(self._max_degree(degree)-1, max_size-current_size)
+            for _ in range(leaf_to_add):
                 current_size += 1
                 current_leaf += 1
                 self.lp_dist_dict[current_size] = current_leaf
@@ -438,15 +446,8 @@ class GraphBorderForCube(GraphBorder):
         GraphBorder.__init__(self, G, upper_bound_strategy)
         self.max_deg = max_deg
 
-    def degree(self, u, exclude='r'):
+    def _max_degree(self, d):
         r"""
-        Compute the degree considering the maximum degree that is allowed.
-
-        Vertex in exlcude, are not considered for the degree. Default value for exclude is 'r'
+        Return the minimum of then and self.max_deg
         """
-        #real_deg = sum(1 for v in self.graph.neighbor_iterator(u)
-        #             if self.vertex_status[v][0] not in exclude)
-        real_deg = super(GraphBorderForCube, self).degree(u, exclude)
-        return min(self.max_deg, real_deg)
-
-
+        return min (d, self.max_deg)
