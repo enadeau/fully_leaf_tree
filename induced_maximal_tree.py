@@ -58,7 +58,8 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
     treat_state()
     return L
 
-def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist'):
+def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
+        partial_output = False):
     r"""
     Compute the leaf function for the cube graph of dimension d
 
@@ -66,6 +67,8 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist'):
         d - dimension of the hypercube
         upper_bound_strategy - The strategy for the upper bound (either
             'dist' or 'naive')
+        partial_output - Indicate, wheter to ouput partial output or not
+            during the computation
 
     OUTPUT:
         A dictionnary L that associate to the number of vertices, the
@@ -77,7 +80,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist'):
         the number of configuration to explore.
 
     EXAMPLES:
-        sage: ComputeL(graphs.CubeGraph(3))
+        sage: CubeGraphLeafFunction(3)[0]
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: 0, 7: 0, 8: 0}
     """
     def treat_state(max_deg):
@@ -141,11 +144,12 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist'):
         if not i == d:
             B.add_to_subtree(extension_vertex)
         treat_state(i)
-        print "Exploration for %s-pode complete at %s" %(i, str(datetime.now()))
-        name = "L-dict-after-"+str(i)+"-pode.sobj"
-        save(L, name)
-        print "%s saved" %name
-        name = "Max-leafed-tree-after"+str(i)+"-pode.sobj"
-        save(max_leafed_tree, name)
-        print "%s saved" %name
+        if partial_output:
+            print "Exploration for %s-pode complete at %s" %(i, str(datetime.now()))
+            name = "L-dict-after-"+str(i)+"-pode.sobj"
+            save(L, name)
+            print "%s saved" %name
+            name = "Max-leafed-tree-after"+str(i)+"-pode.sobj"
+            save(max_leafed_tree, name)
+            print "%s saved" %name
     return L, max_leafed_tree
