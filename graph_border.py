@@ -346,7 +346,7 @@ class GraphBorder(object):
         current_dist = 1
         priority_queue = [(-d, u) for (u, d) in vertices_by_dist[0] if d > 1]
         heapq.heapify(priority_queue)
-        while current_size < max_size:
+        while current_size < max_size and priority_queue:
             (d, u) = heapq.heappop(priority_queue)
             degree = -d
             if current_dist < len(vertices_by_dist):
