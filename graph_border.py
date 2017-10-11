@@ -1,7 +1,7 @@
 from collections import deque
 import heapq
 
-class GraphBorder(object):
+class InducedSubtreeConfiguration(object):
     r"""
     Object that represent a induced subtree of a graph and the surrounding of
     this subtree. The data structure also catch up a bit of the evolution of
@@ -427,7 +427,7 @@ class GraphBorder(object):
         s = "subtree_size:%s, num_leaf:%s, border_size:%s, num_rejected:%s" %d
         return s
 
-class GraphBorderForCube(GraphBorder):
+class InducedSubtreeConfigurationForCube(InducedSubtreeConfiguration):
     r"""
     Specilization of graph border classes for cube
     """
@@ -443,7 +443,7 @@ class GraphBorderForCube(GraphBorder):
                 'naive' or 'dist')
         """
 
-        GraphBorder.__init__(self, G, upper_bound_strategy)
+        InducedSubtreeConfiguration.__init__(self, G, upper_bound_strategy)
         self.max_deg = max_deg
 
     def _max_degree(self, d):

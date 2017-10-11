@@ -65,7 +65,7 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
     max_leafed_tree = dict([(i,[]) for i in range(n+1)])
     L[0] = 0
     max_leafed_tree[0] = [[]]
-    B = GraphBorder(G, upper_bound_strategy)
+    B = InducedSubtreeConfiguration(G, upper_bound_strategy)
     treat_state()
     return L, max_leafed_tree
 
@@ -153,7 +153,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
     #Main computations
     for i in range(d-1, 2, -1):
         #Initialization of a starting configuration with a i-pode
-        B = GraphBorderForCube(G, i, upper_bound_strategy)
+        B = InducedSubtreeConfigurationForCube(G, i, upper_bound_strategy)
         B.add_to_subtree(base_vertex)
         for j in range(d):
             if j < i:
