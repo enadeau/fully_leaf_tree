@@ -1,25 +1,31 @@
 # Fully leafed induced subtrees
 
-This respository contains code used to compute the leaf function of graph.
-The program included was used in an article titled *Fully leafed induced subtrees*,
-submitted to Discrete Mathematics & Theoretical Computer Science.
+This respository contains code for computing the leaf function of graph. It was
+used to compute some values presented in an an article titled *Fully leafed
+induced subtrees*, that will be submitted to Discrete Mathematics & Theoretical
+Computer Science.
 
-Notice that it took about 3 days of computation
-to obtain the function for hypercube graphs of dimension 6.
+Since computing the leaf function is NP-hard for general graphs, the program is
+expected to run for a long time if the graph has medium or large size. For
+instance, it took about 3 days of computation to obtain the function for
+the hypercube graph of dimension 6.
 
 ## Dependencies
 
-- [Sagemath](http://www.sagemath.org/). One needs to install Sagemath to
-  make it work.
+- [Sagemath](http://www.sagemath.org/). One needs to install Sagemath to make
+  it work.
 
 ## How to use
 
 The two main functions are `ComputeL(G)` and `CubeGraphLeafFunction(d)`.
-The first one compute the leaf function for a general graph&nbsp;*G* and similarly the second 
-compute the leaf function but in an optimized way for hypercube graph of dimension&nbsp;*d*. `CubeGraphLeafFunction(d)` also returns examples of
-induced subtrees that reached the maximal number of leaves.
 
-Once Sagemath is started and the two python files loaded, we can compute the following examples:
+- `ComputeL(G)` computes the leaf function for a general graph *G*;
+- `CubeGraphLeafFunction(d)` optimizes `ComputeL(G)` in the special case where
+  *G$ is the hypercube graph of dimension *d*. It also returns examples of
+  induced subtrees that reached the maximal number of leaves.
+
+Below are some examples that can be reproduced once Sagemath is started and the
+two Python files loaded:
 
 ```python
 sage: ComputeL(graphs.CompleteGraph(7))
@@ -42,4 +48,5 @@ sage: L
 License
 =======
 
-All files in this repository are subject to the [GPLv3 license](https://www.gnu.org/licenses/gpl-3.0.en.html).
+All files in this repository are subject to the [GPLv3
+license](https://www.gnu.org/licenses/gpl-3.0.en.html).
