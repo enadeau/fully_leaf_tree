@@ -1,9 +1,24 @@
 # Fully leafed induced subtrees
 
-This respository contains code for computing the leaf function of graph. It was
-used to compute some values presented in an an article titled *Fully leafed
+This respository contains code for computing the leaf function of a graph. It
+was used to compute some values presented in an an article titled *Fully leafed
 induced subtrees*, that will be submitted to Discrete Mathematics & Theoretical
 Computer Science.
+
+## Background
+
+Given a simple graph `G = (V,E)` and `T` a subset of `V`, we say that `T` is a
+*fully leafed induced subtree* of size `i` if the following conditions are
+satisfied:
+
+1. `|T| = i` (`T` is of size `i`);
+2. The subgraph `G[T]` induced by `T` is a tree;
+3. The number of leaves of `G[T]` is maximum, i.e. there is no other induced
+   subtree of size `i` having strictly more leaves than `G[T]`.
+
+The *leaf function* of a graph `G` of `n` vertices, denoted by `L_G`, is the
+function whose domain is `{0,1,...,n}` and such that `L_G(i)` is the number of
+leaves of a fully leafed induced subtree of size `i`.
 
 Since computing the leaf function is NP-hard for general graphs, the program is
 expected to run for a long time if the graph has medium or large size. For
@@ -19,10 +34,10 @@ the hypercube graph of dimension 6.
 
 The two main functions are `ComputeL(G)` and `CubeGraphLeafFunction(d)`.
 
-- `ComputeL(G)` computes the leaf function for a general graph *G*;
-- `CubeGraphLeafFunction(d)` optimizes `ComputeL(G)` in the special case where
-  *G$ is the hypercube graph of dimension *d*. It also returns examples of
-  induced subtrees that reached the maximal number of leaves.
+- `ComputeL(G)` computes the leaf function for a general graph `G`;
+- `CubeGraphLeafFunction(d)` optimizes `ComputeL(Q_d)` in the special case
+  where `Q_d` is the hypercube graph of dimension `d`. It also returns examples
+  of induced subtrees that reached the maximal number of leaves.
 
 Below are some examples that can be reproduced once Sagemath is started and the
 two Python files loaded:
