@@ -13,20 +13,21 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
 
     OUTPUT:
         A dictionnary L that associate to the number of vertices, the
-        maximal number of leaves.
+        maximal number of leaves and a dictionnary of example of subtrees
+        realizing the leaf function.
 
     EXAMPLES:
-        sage: ComputeL(graphs.CompleteGraph(7))
+        sage: ComputeL(graphs.CompleteGraph(7))[0]
         {0: 0, 1: 0, 2: 2, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
-        sage: ComputeL(graphs.CycleGraph(10))
+        sage: ComputeL(graphs.CycleGraph(10))[0]
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 0}
-        sage: ComputeL(graphs.WheelGraph(11))
+        sage: ComputeL(graphs.WheelGraph(11))[0]
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 2, 8: 2, 9: 2, 10: 0, 11: 0}
-        sage: ComputeL(graphs.CompleteBipartiteGraph(7,5))
+        sage: ComputeL(graphs.CompleteBipartiteGraph(7,5))[0]
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 0, 10: 0, 11: 0, 12: 0}
-        sage: ComputeL(graphs.PetersenGraph())
+        sage: ComputeL(graphs.PetersenGraph())[0]
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: 0, 9: 0, 10: 0}
-        sage: ComputeL(graphs.CubeGraph(3))
+        sage: ComputeL(graphs.CubeGraph(3))[0]
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: 0, 7: 0, 8: 0}
     """
     def treat_state():
@@ -42,7 +43,11 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
         next_vertex = B.vertex_to_add()
         if next_vertex == None:
             #The subtree can't be extend
-            L[m] = max(L[m], l)
+            if L[m] == l:
+                max_leafed_tree[m].append(copy(B.subtree_vertices))
+            elif L[m] < l:
+                max_leafed_tree[m] = [copy(B.subtree_vertices)]
+                L[m] = l
         elif promising:
             B.add_to_subtree(next_vertex)
             treat_state()
@@ -54,9 +59,10 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
     assert upper_bound_strategy in ['naive', 'dist']
     n = G.num_verts()
     L = dict([(i, 0) for i in range(0, n+1)])
+    max_leafed_tree = dict([(i,[]) for i in range(n+1)])
     B = GraphBorder(G, upper_bound_strategy)
     treat_state()
-    return L
+    return L, max_leafed_tree
 
 def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
         partial_output = False):
@@ -72,8 +78,8 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
 
     OUTPUT:
         A dictionnary L that associate to the number of vertices, the
-        maximal number of leaves and a dictionnary of example of subtrees realizing
-        the leaf function.
+        maximal number of leaves and a dictionnary of example of subtrees
+        realizing the leaf function.
 
     ALGORITHM:
         Use symmetry of the cube to partion the search state and minimizing
