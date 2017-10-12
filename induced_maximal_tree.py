@@ -1,4 +1,5 @@
 from datetime import datetime
+import warnings
 load('graph_border.py')
 
 def ComputeL(G, upper_bound_strategy = 'dist'):
@@ -141,7 +142,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
             L[i] = max(2, L[i])
     else:
         raise ValueError, "d is too big, no chance of sucess"
-
+    #Main computations
     for i in range(d-1, 2, -1):
         #Initialization of a starting configuration with a i-pode
         B = GraphBorderForCube(G, i, upper_bound_strategy)
@@ -161,4 +162,13 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
             name = "Max-leafed-tree-after"+str(i)+"-pode.sobj"
             save(max_leafed_tree, name)
             print "%s saved" %name
+    #Add example if fully leafed tree are snakes
+    L[5]=2
+    for i in range(d+1, n+1):
+        if L[i] == 2 and i not in [2,3]:
+            if (i, d) == (5, 3):
+                max_leafed_tree[5] = [['000', '100', '110', '111', '011']]
+            else:
+                warnings.warn("Warning: This program cannot return an example of fully leafed tree of size %s" %i)
+
     return L, max_leafed_tree
