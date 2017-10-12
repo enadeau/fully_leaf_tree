@@ -128,9 +128,13 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
     L = dict([(i,0) for i in range(n+1)])
     max_leafed_tree = dict([(i,[]) for i in range(n+1)])
     #Initialization for small value
+    L[1] = 0
+    max_leafed_tree[1].append([base_vertex])
     L[2] = 2
+    max_leafed_tree[2].append([base_vertex, star_vertices[0]])
     for i in range(3,d+2):
-        L[i] = max(i-1, L[i])
+        L[i] = i-1
+        max_leafed_tree[i].append([base_vertex]+star_vertices[:i-1])
     #Initialization according to snake-in-the-box
     if d <= 8:
         for i in range(2, snake_in_the_box[d]+1):
@@ -138,7 +142,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
     else:
         raise ValueError, "d is too big, no chance of sucess"
 
-    for i in range(d, 2, -1):
+    for i in range(d-1, 2, -1):
         #Initialization of a starting configuration with a i-pode
         B = GraphBorderForCube(G, i, upper_bound_strategy)
         B.add_to_subtree(base_vertex)
@@ -147,8 +151,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
                 B.add_to_subtree(star_vertices[j])
             else:
                 B.reject_vertex(star_vertices[j])
-        if not i == d:
-            B.add_to_subtree(extension_vertex)
+        B.add_to_subtree(extension_vertex)
         treat_state(i)
         if partial_output:
             print "Exploration for %s-pode complete at %s" %(i, str(datetime.now()))
