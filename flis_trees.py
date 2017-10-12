@@ -1,6 +1,5 @@
 from networkx import Graph
 from networkx.algorithms import is_tree
-from networkx.drawing.nx_agraph import write_dot
 
 INFINITY = float('inf')
 
@@ -19,6 +18,12 @@ def directed_edges_iter(g):
     OUTPUT
 
     A generator over ordered pairs
+
+    EXAMPLE:
+
+        sage: from networkx.generators.classic import wheel_graph
+        sage: sorted(list(directed_edges_iter(wheel_graph(3))))
+        [(0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1)]
     """
     for (u,v) in g.edges_iter():
         yield (u,v)
@@ -57,6 +62,17 @@ class LeafMapDynamicProgram(object):
         OUTPUT
 
         A non negative integer
+
+        EXAMPLE:
+
+        Consider the perfectly balanced ternary tree of height `2`. Then each
+        of its subtree are of size `4`::
+
+            sage: from networkx.generators.classic import balanced_tree
+            sage: T = balanced_tree(3, 2)
+            sage: program = LeafMapDynamicProgram(T)
+            sage: [program.subtree_size(0, i) for i in range(1, 4)]
+            [4, 4, 4]
         """
         if (u,v) not in self.sizes:
             self.sizes[(u,v)] = sum(self.subtree_size(v, w)\
@@ -70,11 +86,23 @@ class LeafMapDynamicProgram(object):
         OUTPUT:
 
         A dictionary
+
+        EXAMPLE:
+
+        The perfectly balanced binary tree of height `2`:
+
+            sage: from networkx.generators.classic import balanced_tree
+            sage: T = balanced_tree(2, 2)
+            sage: program = LeafMapDynamicProgram(T)
+            sage: program.leaf_map()
+            {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
         """
         if not self.L:
             L = self.edge_leaf_maps()
             self.L = dict((i, max(L[(u,v)][i] for (u,v) in self.g.edges_iter()))\
                     for i in range(2, self.g.number_of_nodes() + 1))
+            self.L[0] = 0
+            self.L[1] = 0
         return self.L
 
     def edge_leaf_maps(self):
@@ -84,6 +112,17 @@ class LeafMapDynamicProgram(object):
         OUTPUT:
 
         A dictionary associating edges with a dictionary
+
+        EXAMPLE:
+
+        The perfectly balanced binary tree of height `2`:
+
+            sage: from networkx.generators.classic import balanced_tree
+            sage: T = balanced_tree(3, 2)
+            sage: program = LeafMapDynamicProgram(T)
+            sage: leaf_maps = program.edge_leaf_maps()
+            sage: leaf_maps[(0,1)].values()
+            [2, 2, 3, 4, 4, 5, 5, 6, 7, 7, 8, 9]
         """
         if not self.edgeL:
             self.edgeL = dict(((u,v), {}) for (u,v) in self.g.edges_iter())
@@ -162,30 +201,3 @@ class LeafMapDynamicProgram(object):
             interval = range(max(0, i - nfp), min(nt1, i) + 1)
             return max(self.Lt(u, v, j) + self.Lf(forestp, i - j)\
                    for j in interval)
-
-# Main #
-# ---- #
-
-def example():
-    r"""
-    Illustrates the dynamic program on an example.
-    """
-    g = Graph()
-    g.add_edges_from([('u1', 'u6'), ('u2', 'u6'), ('u3', 'u6'),\
-                      ('u4', 'u8'), ('u5', 'u8'),\
-                      ('u6', 'u'), ('u7', 'u'), ('u8', 'u'),\
-                      ('v2', 'v3'), ('v2', 'v4'), ('v', 'v2'), ('v', 'v1'),\
-                      ('u', 'v')])
-    
-    program = LeafMapDynamicProgram(g)
-    L = program.leaf_map()
-    (x,y) = ('v', 'u')
-    Ltxy = [program.Lt(x, y, i) for i in range(program.subtree_size(x, y) + 1)]
-    print('Lt(%s, %s) = %s' % (x, y, Ltxy))
-    print('L[%s -> %s] = %s' % (x, y, program.directedL[(x,y)]))
-    v = L.values()
-    w = [v[i+1] - v[i] for i in range(1, len(v) - 1)]
-    print(v)
-    print(w)
-
-example()
