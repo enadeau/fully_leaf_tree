@@ -41,7 +41,7 @@ using the optional parameter `algorihtm`.  The available options are:
 - `cube`: uses a specialization of the general branch and bound algorihtm for cube graph.
 
 Below are some examples that can be reproduced once Sagemath is started and the
-two Python files loaded:
+three Python files loaded:
 
 ```python
 sage: ComputeL(graphs.CompleteGraph(7))[0]
