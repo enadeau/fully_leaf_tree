@@ -17,19 +17,21 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
         maximal number of leaves and a dictionnary of example of subtrees
         realizing the leaf function.
 
+        L[i] = None indicate that no induced subtree of this size exist.
+
     EXAMPLES:
         sage: ComputeL(graphs.CompleteGraph(7))[0]
-        {0: 0, 1: 0, 2: 2, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
+        {0: 0, 1: 0, 2: 2, 3: None, 4: None, 5: None, 6: None, 7: None}
         sage: ComputeL(graphs.CycleGraph(10))[0]
-        {0: 0, 1: 0, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 0}
+        {0: 0, 1: 0, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: None}
         sage: ComputeL(graphs.WheelGraph(11))[0]
-        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 2, 8: 2, 9: 2, 10: 0, 11: 0}
+        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 2, 8: 2, 9: 2, 10: None, 11: None}
         sage: ComputeL(graphs.CompleteBipartiteGraph(7,5))[0]
-        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 0, 10: 0, 11: 0, 12: 0}
+        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: None, 10: None, 11: None, 12: None}
         sage: ComputeL(graphs.PetersenGraph())[0]
-        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: 0, 9: 0, 10: 0}
+        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: None, 9: None, 10: None}
         sage: ComputeL(graphs.CubeGraph(3))[0]
-        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: 0, 7: 0, 8: 0}
+        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
     """
     def treat_state():
         r"""
@@ -59,8 +61,9 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
 
     assert upper_bound_strategy in ['naive', 'dist']
     n = G.num_verts()
-    L = dict([(i, 0) for i in range(0, n+1)])
+    L = dict([(i, None) for i in range(0, n+1)])
     max_leafed_tree = dict([(i,[]) for i in range(n+1)])
+    L[0] = 0
     max_leafed_tree[0] = [[]]
     B = GraphBorder(G, upper_bound_strategy)
     treat_state()
@@ -83,13 +86,15 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
         maximal number of leaves and a dictionnary of example of subtrees
         realizing the leaf function.
 
+        L[i] = None indicate that no induced subtree of this size exist.
+
     ALGORITHM:
         Use symmetry of the cube to partion the search state and minimizing
         the number of configuration to explore.
 
     EXAMPLES:
         sage: CubeGraphLeafFunction(3)[0]
-        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: 0, 7: 0, 8: 0}
+        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
     """
     def treat_state(max_deg):
         r"""
@@ -127,7 +132,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
     extension_vertex = '1'+'0'*(d-2)+'1'
     G = graphs.CubeGraph(d)
     n = G.num_verts()
-    L = dict([(i,0) for i in range(n+1)])
+    L = dict([(i, None) for i in range(n+1)])
     max_leafed_tree = dict([(i,[]) for i in range(n+1)])
     #Initialization for small value
     L[0] = 0
