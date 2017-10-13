@@ -1,4 +1,5 @@
 from datetime import datetime
+import warnings
 load('graph_border.py')
 
 def ComputeL(G, upper_bound_strategy = 'dist'):
@@ -13,21 +14,24 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
 
     OUTPUT:
         A dictionnary L that associate to the number of vertices, the
-        maximal number of leaves.
+        maximal number of leaves and a dictionnary of example of subtrees
+        realizing the leaf function.
+
+        L[i] = None indicate that no induced subtree of this size exist.
 
     EXAMPLES:
-        sage: ComputeL(graphs.CompleteGraph(7))
-        {0: 0, 1: 0, 2: 2, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
-        sage: ComputeL(graphs.CycleGraph(10))
-        {0: 0, 1: 0, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 0}
-        sage: ComputeL(graphs.WheelGraph(11))
-        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 2, 8: 2, 9: 2, 10: 0, 11: 0}
-        sage: ComputeL(graphs.CompleteBipartiteGraph(7,5))
-        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 0, 10: 0, 11: 0, 12: 0}
-        sage: ComputeL(graphs.PetersenGraph())
-        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: 0, 9: 0, 10: 0}
-        sage: ComputeL(graphs.CubeGraph(3))
-        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: 0, 7: 0, 8: 0}
+        sage: ComputeL(graphs.CompleteGraph(7))[0]
+        {0: 0, 1: 0, 2: 2, 3: None, 4: None, 5: None, 6: None, 7: None}
+        sage: ComputeL(graphs.CycleGraph(10))[0]
+        {0: 0, 1: 0, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: None}
+        sage: ComputeL(graphs.WheelGraph(11))[0]
+        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 2, 8: 2, 9: 2, 10: None, 11: None}
+        sage: ComputeL(graphs.CompleteBipartiteGraph(7,5))[0]
+        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: None, 10: None, 11: None, 12: None}
+        sage: ComputeL(graphs.PetersenGraph())[0]
+        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: None, 9: None, 10: None}
+        sage: ComputeL(graphs.CubeGraph(3))[0]
+        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
     """
     def treat_state():
         r"""
@@ -42,7 +46,11 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
         next_vertex = B.vertex_to_add()
         if next_vertex == None:
             #The subtree can't be extend
-            L[m] = max(L[m], l)
+            if L[m] == l:
+                max_leafed_tree[m].append(copy(B.subtree_vertices))
+            elif L[m] < l:
+                max_leafed_tree[m] = [copy(B.subtree_vertices)]
+                L[m] = l
         elif promising:
             B.add_to_subtree(next_vertex)
             treat_state()
@@ -53,10 +61,13 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
 
     assert upper_bound_strategy in ['naive', 'dist']
     n = G.num_verts()
-    L = dict([(i, 0) for i in range(0, n+1)])
+    L = dict([(i, None) for i in range(0, n+1)])
+    max_leafed_tree = dict([(i,[]) for i in range(n+1)])
+    L[0] = 0
+    max_leafed_tree[0] = [[]]
     B = GraphBorder(G, upper_bound_strategy)
     treat_state()
-    return L
+    return L, max_leafed_tree
 
 def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
         partial_output = False):
@@ -72,8 +83,10 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
 
     OUTPUT:
         A dictionnary L that associate to the number of vertices, the
-        maximal number of leaves and a dictionnary of example of subtrees realizing
-        the leaf function.
+        maximal number of leaves and a dictionnary of example of subtrees
+        realizing the leaf function.
+
+        L[i] = None indicate that no induced subtree of this size exist.
 
     ALGORITHM:
         Use symmetry of the cube to partion the search state and minimizing
@@ -81,7 +94,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
 
     EXAMPLES:
         sage: CubeGraphLeafFunction(3)[0]
-        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: 0, 7: 0, 8: 0}
+        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
     """
     def treat_state(max_deg):
         r"""
@@ -119,20 +132,26 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
     extension_vertex = '1'+'0'*(d-2)+'1'
     G = graphs.CubeGraph(d)
     n = G.num_verts()
-    L = dict([(i,0) for i in range(n+1)])
+    L = dict([(i, None) for i in range(n+1)])
     max_leafed_tree = dict([(i,[]) for i in range(n+1)])
     #Initialization for small value
+    L[0] = 0
+    max_leafed_tree[0] = [[]]
+    L[1] = 0
+    max_leafed_tree[1].append([base_vertex])
     L[2] = 2
+    max_leafed_tree[2].append([base_vertex, star_vertices[0]])
     for i in range(3,d+2):
-        L[i] = max(i-1, L[i])
+        L[i] = i-1
+        max_leafed_tree[i].append([base_vertex]+star_vertices[:i-1])
     #Initialization according to snake-in-the-box
     if d <= 8:
         for i in range(2, snake_in_the_box[d]+1):
             L[i] = max(2, L[i])
     else:
         raise ValueError, "d is too big, no chance of sucess"
-
-    for i in range(d, 2, -1):
+    #Main computations
+    for i in range(d-1, 2, -1):
         #Initialization of a starting configuration with a i-pode
         B = GraphBorderForCube(G, i, upper_bound_strategy)
         B.add_to_subtree(base_vertex)
@@ -141,8 +160,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
                 B.add_to_subtree(star_vertices[j])
             else:
                 B.reject_vertex(star_vertices[j])
-        if not i == d:
-            B.add_to_subtree(extension_vertex)
+        B.add_to_subtree(extension_vertex)
         treat_state(i)
         if partial_output:
             print "Exploration for %s-pode complete at %s" %(i, str(datetime.now()))
@@ -152,4 +170,12 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
             name = "Max-leafed-tree-after"+str(i)+"-pode.sobj"
             save(max_leafed_tree, name)
             print "%s saved" %name
+    #Add example if fully leafed tree are snakes
+    for i in range(d+1, n+1):
+        if L[i] == 2 and i not in [2,3]:
+            if (i, d) == (5, 3):
+                max_leafed_tree[5] = [['000', '100', '110', '111', '011']]
+            else:
+                warnings.warn("Warning: This program cannot return an example of fully leafed tree of size %s" %i)
+
     return L, max_leafed_tree
