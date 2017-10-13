@@ -37,7 +37,7 @@ def ComputeL(G, upper_bound_strategy = 'dist', algorihtm = 'general'):
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: None, 9: None, 10: None}
         sage: ComputeL(graphs.CubeGraph(3), algorihtm = 'cube')[0]
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
-        sage: ComputeL(graphs.BalancedTree(2, 2))[0]
+        sage: ComputeL(graphs.BalancedTree(2, 2), algorihtm = 'tree')[0]
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
     """
     def treat_state():
