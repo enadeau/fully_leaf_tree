@@ -1,5 +1,3 @@
-INFINITY = float('inf')
-
 # ---- #
 # Util #
 # ---- #
