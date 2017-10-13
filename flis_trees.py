@@ -72,6 +72,11 @@ class LeafMapDynamicProgram(object):
                     for w in self.g[v] if w != u) + 1
         return self.sizes[(u, v)]
 
+    def leaf_map_with_example(self):
+        # TODO Implement this function
+        max_leafed_tree = dict([(i,[["an example"]]) for i in range(self.g.num_verts())])
+        return self.leaf_map(), max_leafed_tree
+
     def leaf_map(self):
         r"""
         Returns the leaf map of the graph associated with self.
