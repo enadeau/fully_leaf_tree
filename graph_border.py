@@ -30,7 +30,7 @@ class Configuration(object):
 
     - ``num_leaf``: The number of leaves of the subtree.
 
-    - ``num_excluded: The number of vertices that are rejected
+    - ``num_excluded``: The number of vertices that are rejected
 
     - ``border_size``: The number of vertices in the border
 
@@ -43,8 +43,8 @@ class Configuration(object):
         the vertex that caused the exclusion of ``v``. In particular, if ``u ==
         v``, then it means that the vertex was manually excluded by a call to
         the function ``exclude_vertex(v)``.
-      * ``(BORDER, u)`` if ``v`` is not in the subtree and is adjacent to
-        exactly one vertex of the subtree which is ``u``;
+      * ``(BORDER, None)`` if ``v`` is not in the subtree and is adjacent to
+        exactly one vertex of the subtree;
       * ``(NOT_SEEN, None)`` otherwise. This means that ``v`` is not included,
         not excluded and is not adjacent to another included vertex.
 
@@ -125,8 +125,8 @@ class Configuration(object):
         Includes the vertex ``v`` to the current configuration.
 
         Assumes that the included vertex can be safely included. Also returns
-        the degree of the only vertex ``u`` adjacent to ``v`` after the
-        inclusion
+        the degree in the subtree of the only vertex ``u`` with status
+        ``INCLUDED`` adjacent to ``v`` after the inclusion.
 
         INPUT:
 
@@ -137,8 +137,8 @@ class Configuration(object):
         An integer
         """
         assert self.vertex_status[v][0] == Configuration.BORDER or\
-               (Configuration.BORDER, None) not in self.vertex_status.values(),\
-               "Invalid vertex to add"
+               (self.vertex_status[v][0] == Configuration.NOT_SEEN and \
+               self.subtree_size == 0), "Invalid vertex to add"
         degree = 0
         for u in self.graph.neighbor_iterator(v):
             (state, info) = self.vertex_status[u]
@@ -169,7 +169,7 @@ class Configuration(object):
     def _undo_last_inclusion(self, v):
         r"""
         Reverts the inclusion of vertex ``v``.
-        
+
         The last operation must be the inclusion of vertex ``v``.
 
         ``v``: The last included vertex
@@ -205,7 +205,7 @@ class Configuration(object):
         ``v``: The vertex to exclude
         """
         assert self.vertex_status[v][0] == Configuration.BORDER or\
-               self.subtree_size == 0
+               self.subtree_size == 0, "Invalid vertex to exclude"
         self.vertex_status[v] = (Configuration.EXCLUDED, v)
         if self.subtree_size != 0:
             self.border_size -= 1
@@ -216,7 +216,7 @@ class Configuration(object):
     def _undo_last_exclusion(self, v):
         r"""
         Reverts the exclusion of vertex ``v``.
-        
+
         The last operation must be the exclusion of vertex ``v``.
 
         ``v``: The last excluded vertex
@@ -231,7 +231,7 @@ class Configuration(object):
     def undo_last_operation(self):
         r"""
         Cancels the last operation on self.
-        
+
         The operation is either an inclusion or an exclusion.
         """
         v = self.history.pop()
@@ -385,7 +385,7 @@ class Configuration(object):
                         heapq.heappush(priority_queue, (-d, v))
                 current_dist += 1
             current_leaf -= 1
-            leaf_to_add = min(min(self.max_degree_allowed_in_subtree, degree) - 1,\
+            leaf_to_add = min(self.max_degree_allowed_in_subtree - 1, degree - 1,\
                               max_size-current_size)
             for _ in range(leaf_to_add):
                 current_size += 1
@@ -415,7 +415,7 @@ class Configuration(object):
         else:
             return self._leaf_potential_dist(i)
 
-    def plot(self):
+    def plot(self, **kwargs):
         r"""
         Returns a plot of self.
 
@@ -428,29 +428,27 @@ class Configuration(object):
 
         Moreover, edges belonging to the induced subtree are colored in green.
         """
-        vertex_color = {"blue": [], "yellow": [], "black": [], "red": [], "green": []}
+        vertex_color = {"blue": [], "yellow": [], "black": [], "red": [], \
+                "green": []}
         for v in self.graph.vertex_iterator():
             (state,info) = self.vertex_status[v]
-            if state == "a":
+            if state == Configuration.NOT_SEEN:
                 vertex_color["blue"].append(v)
-            elif state == "b":
+            elif state == Configuration.BORDER:
                 vertex_color["yellow"].append(v)
-            elif state == "s":
+            elif state == Configuration.INCLUDED:
                 vertex_color["green"].append(v)
-            else: #state is "r"
-                if info == v:
-                    vertex_color["black"].append(v)
-                else:
-                    vertex_color["red"].append(v)
+            else:
+                vertex_color["red"].append(v)
 
         tree_edge = []
-        for (u, v, label) in self.graph.edge_iterator():
+        for (u, v, _) in self.graph.edge_iterator():
             if self.vertex_status[v][0] == Configuration.INCLUDED\
                                         == self.vertex_status[u][0]:
                 tree_edge.append((u,v))
-
-        return self.graph.plot(vertex_colors=vertex_color,
-                edge_colors={"green": tree_edge})
+        kwargs['vertex_colors'] = vertex_color
+        kwargs['edge_colors'] = {"green": tree_edge}
+        return self.graph.plot(**kwargs)
 
     def __repr__(self):
         r"""
