@@ -12,7 +12,7 @@ def directed_edges_iter(g):
 
     - ``g``: an undirected graph
 
-    OUTPUT
+    OUTPUT:
 
     A generator over ordered pairs
 
@@ -48,7 +48,7 @@ class LeafMapDynamicProgram(object):
 
     def subtree_size(self, u, v):
         r"""
-        Returns the size of the subtree induced by the arc `(u,v)`.
+        Returns the size of the subtree induced by the arc `(u, v)`.
 
         INPUT:
 
@@ -69,10 +69,10 @@ class LeafMapDynamicProgram(object):
             sage: [program.subtree_size(0, i) for i in range(1, 4)]
             [4, 4, 4]
         """
-        if (u,v) not in self.sizes:
-            self.sizes[(u,v)] = sum(self.subtree_size(v, w)\
+        if (u, v) not in self.sizes:
+            self.sizes[(u, v)] = sum(self.subtree_size(v, w)\
                     for w in self.g[v] if w != u) + 1
-        return self.sizes[(u,v)]
+        return self.sizes[(u, v)]
 
     def leaf_map(self):
         r"""
@@ -93,8 +93,9 @@ class LeafMapDynamicProgram(object):
         """
         if not self.L:
             L = self.edge_leaf_maps()
-            self.L = dict((i, max(L[(u,v)][i] for (u,v, l) in self.g.edge_iterator()))\
-                    for i in range(2, self.g.num_verts() + 1))
+            self.L = dict((i, max(L[(u, v)][i] for (u, v, l) in \
+                    self.g.edge_iterator())) for i in range(2,
+                        self.g.num_verts() + 1))
             self.L[0] = 0
             self.L[1] = 0
         return self.L
@@ -114,26 +115,27 @@ class LeafMapDynamicProgram(object):
             sage: T = graphs.BalancedTree(3, 2)
             sage: program = LeafMapDynamicProgram(T)
             sage: leaf_maps = program.edge_leaf_maps()
-            sage: leaf_maps[(0,1)].values()
+            sage: leaf_maps[(0, 1)].values()
             [2, 2, 3, 4, 4, 5, 5, 6, 7, 7, 8, 9]
         """
         if not self.edgeL:
-            self.edgeL = dict(((u,v), {}) for (u,v, l) in self.g.edge_iterator())
+            self.edgeL = dict(((u, v), {}) for (u, v, l) in \
+                    self.g.edge_iterator())
             for (u,v, l) in self.g.edge_iterator():
                 for i in range(2, self.g.num_verts() + 1):
                     ntuv = self.subtree_size(u, v)
                     ntvu = self.subtree_size(v, u)
                     interval = range(max(1, i - ntvu), min(i - 1, ntuv) + 1)
-                    self.edgeL[(u,v)][i] = \
+                    self.edgeL[(u, v)][i] = \
                             max(self.Lt(u, v, j) + self.Lt(v, u, i - j)\
                             for j in interval)
         return self.edgeL
 
     def Lt(self, u, v, i):
         r"""
-        Returns the leaf map value for the arc `(u,v)` and size `i`.
+        Returns the leaf map value for the arc `(u, v)` and size `i`.
 
-        More precisely, if `T` is the rooted tree induced by the arc `(u,v)`,
+        More precisely, if `T` is the rooted tree induced by the arc `(u, v)`,
         then `self.Lt(u, v, i)` returns the maximal number of leaves that can
         be realized by a rooted induced subtree of size `i` whose root is `v`.
 
@@ -153,15 +155,15 @@ class LeafMapDynamicProgram(object):
         """
         n = self.subtree_size(u, v)
         assert i <= n
-        if (u,v) not in self.directedL:
-            self.directedL[(u,v)] = {}
-        if i not in self.directedL[(u,v)]:
+        if (u, v) not in self.directedL:
+            self.directedL[(u, v)] = {}
+        if i not in self.directedL[(u, v)]:
             if i == 0 or i == 1:
-                self.directedL[(u,v)][i] = i
+                self.directedL[(u, v)][i] = i
             else:
                 forest = [(v, w) for w in self.g[v] if w != u]
-                self.directedL[(u,v)][i] = self.Lf(forest, i - 1)
-        return self.directedL[(u,v)][i]
+                self.directedL[(u, v)][i] = self.Lf(forest, i - 1)
+        return self.directedL[(u, v)][i]
 
     def Lf(self, forest, i):
         r"""
@@ -184,7 +186,7 @@ class LeafMapDynamicProgram(object):
 
         A non negative integer
         """
-        (u,v) = forest[0]
+        (u, v) = forest[0]
         if len(forest) == 1:
             return self.Lt(u, v, i)
         else:
