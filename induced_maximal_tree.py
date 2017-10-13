@@ -55,7 +55,7 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
             B.add_to_subtree(next_vertex)
             treat_state()
             B.undo_last_user_action()
-            B.reject_vertex(next_vertex)
+            B.exclude_vertex(next_vertex)
             treat_state()
             B.undo_last_user_action()
 
@@ -119,7 +119,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
             if degree <= i:
                 treat_state(max_deg)
             B.undo_last_user_action()
-            B.reject_vertex(next_vertex)
+            B.exclude_vertex(next_vertex)
             treat_state(max_deg)
             B.undo_last_user_action()
 
@@ -159,7 +159,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
             if j < i:
                 B.add_to_subtree(star_vertices[j])
             else:
-                B.reject_vertex(star_vertices[j])
+                B.exclude_vertex(star_vertices[j])
         B.add_to_subtree(extension_vertex)
         treat_state(i)
         if partial_output:

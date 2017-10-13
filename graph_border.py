@@ -3,55 +3,66 @@ import heapq
 
 class InducedSubtreeConfiguration(object):
     r"""
-    Object that represent a induced subtree of a graph and the surrounding of
-    this subtree. The data structure also catch up a bit of the evolution of
-    the tree over time.
+    Vertex status
+    """
+    INCLUDED = 0 # The vertex is included
+    EXCLUDED = 1 # The vertex is excluded
+    BORDER = 2   # The vertex is on the border
+    NOT_SEEN = 3 # The vertex has not been discovered yet
 
+    r"""
+    A configuration of an induced subtree for a fixed graph.
+
+    This object is used for facilitating the enumeration of all induced
+    subtrees of a graph. It offers basic operations, such as forcing the
+    inclusion or exclusion of a fixed vertex in the subtree.
+
+    We say that a vertex ``v`` is in the *border* if it is not included, not
+    excluded and adjacent to exactly one included vertex.
 
     ATTRIBUTES:
-        vertex_status: Dictionnary that store the state of each vertices with
-        options. The status of a vertex v is of the form:
-            - ("s", d) if v is in the subtree with degree d in the subtree;
-            - ("b", p) if v is not in the subtree and is adjacent to exactly one
-              vertex of the subtree which is p;
-            - ("r", i) if v rejected of the subtree. If i==v the vertex was
-              voluntary rejected from a potential subtree by the users.
-              Otherwise it indicates that the addition of the vertex v to the
-              subtree will form a cycle since vertex i was add to the subtree.
-            - ("a", None) if v can eventually be add to the subtree but his
-              addition will created a disconnected subgraph in the actual state
-              (i.e v is not on the border of the subtree)
 
-        graph: The graph used to induced the subtree
+    - ``graph``: The graph in which the configuration lives.
 
-        num_leaf: The number of leaves of the subtree. Note that with this class
-        a tree with only one vertex is consider to have one leaf but the
-        function subtree_num_leaf makes the correction.
+    - ``subtree_vertices``: The vertices that are in the subtree.
 
-        border_size: The number of vertices in the border
+    - ``subtree_size``: The number of vertices in the subtree (included)
 
-        subtree_size: The number of vertices in the subtree
+    - ``num_leaf``: The number of leaves of the subtree.
 
-        num_rejected: The number of vertices that are rejected
+    - ``num_excluded: The number of vertices that are rejected
 
-        user_intervention_stack: Stack of the subtree vertices in the order of
-        which the user explicitly specify the state (by addition or rejection).
-        Last vertex the user acts on is on top.
+    - ``border_size``: The number of vertices in the border
 
-        subtree_vertices: A list vertices that are in the subtree.
+    - ``vertex_status``: A dictionary that store the state of each vertex. The
+      status of a vertex ``v`` is of one of the following forms:
 
-        upper_bound_strategy: The strategy for the leaf potential. The leaf
-        potential is an upper bound on the number of leaves that a tree can
-        have if it grows from the current subtree. The strategy is either
-        'naive' or 'dist'.
+      * ``(INCLUDED, d)`` if ``v`` is in the subtree and has degree ``d`` in
+        the subtree;
+      * ``(EXCLUDED, u)`` if ``v`` is excluded from the subtree, where ``u`` is
+        the vertex that caused the exclusion of ``v``. In particular, if ``u ==
+        v``, then it means that the vertex was manually excluded by a call to
+        the function ``exclude_vertex(v)``.
+      * ``(BORDER, u)`` if ``v`` is not in the subtree and is adjacent to
+        exactly one vertex of the subtree which is ``u``;
+      * ``(NOT_SEEN, None)`` otherwise. This means that ``v`` is not included,
+        not excluded and is not adjacent to another included vertex.
 
-        lp_dist_dict: A dictionnary of the leaf potentential function of the
-        structures according to dist_strategy
+    - ``history``: A stack of vertices, in the order according to which they
+      have been manually included or manually excluded.
 
-        lp_dist_valid: boolean indicating if the structure has change since last
-        computation of lp_dist_dict.
+    - ``upper_bound_strategy``: The strategy chosen for computing the leaf
+      potential. The leaf potential is an upper bound on the number of leaves
+      that any extension of the current configuration could have. Currently,
+      the available strategies are either 'naive' or 'dist'.
 
-        border_vertex: A vertex that is `probably` a border vertex
+    - ``lp_dist_dict``: A dictionary indicating all possible leaf potentials
+      for the `dist` strategy.
+
+    - ``lp_dist_valid``: A boolean indicating if the structure has changed
+      since the last computation of ``lp_dist_dict``.
+
+    - ``border_vertex``: A candidate border vertex.
     """
 
     def __init__(self, G, upper_bound_strategy = 'dist'):
@@ -173,7 +184,7 @@ class InducedSubtreeConfiguration(object):
         self.num_leaf -= 1
         self.subtree_vertices.pop()
 
-    def reject_vertex(self, v):
+    def exclude_vertex(self, v):
         r"""
         Sets a vertex that is not in the solution to rejected.
         When a vertex v has been rejected using this method,
