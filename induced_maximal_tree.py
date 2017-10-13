@@ -61,6 +61,7 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
     n = G.num_verts()
     L = dict([(i, 0) for i in range(0, n+1)])
     max_leafed_tree = dict([(i,[]) for i in range(n+1)])
+    max_leafed_tree[0] = [[]]
     B = GraphBorder(G, upper_bound_strategy)
     treat_state()
     return L, max_leafed_tree
@@ -129,6 +130,8 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
     L = dict([(i,0) for i in range(n+1)])
     max_leafed_tree = dict([(i,[]) for i in range(n+1)])
     #Initialization for small value
+    L[0] = 0
+    max_leafed_tree[0] = [[]]
     L[1] = 0
     max_leafed_tree[1].append([base_vertex])
     L[2] = 2
@@ -163,7 +166,6 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
             save(max_leafed_tree, name)
             print "%s saved" %name
     #Add example if fully leafed tree are snakes
-    L[5]=2
     for i in range(d+1, n+1):
         if L[i] == 2 and i not in [2,3]:
             if (i, d) == (5, 3):
