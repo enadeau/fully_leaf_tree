@@ -75,19 +75,19 @@ class InducedSubtreeConfiguration(object):
             upper_bound_strategy - The strategy for the leaf potential (either
                 'naive' or 'dist')
         """
-        self.vertex_status = dict()
         self.graph = G
-        self.num_leaf = 0
-        self.border_size = 0
-        self.subtree_size = 0
-        self.num_rejected = 0
-        self.user_intervention_stack = []
         self.subtree_vertices = []
-        self.lp_dist_valid = False
+        self.subtree_size = 0
+        self.num_leaf = 0
+        self.num_excluded = 0
+        self.border_size = 0
+        self.vertex_status = dict()
+        for v in G.vertex_iterator():
+            self.vertex_status[v] = (InducedSubtreeConfiguration.NOT_SEEN, None)
+        self.history = []
         assert upper_bound_strategy in ['naive', 'dist']
         self.upper_bound_strategy = upper_bound_strategy
-        for v in G.vertex_iterator():
-            self.vertex_status[v] = ("a", None)
+        self.lp_dist_valid = False
         self.border_vertex = v
 
     def vertex_to_add(self):
@@ -97,17 +97,17 @@ class InducedSubtreeConfiguration(object):
         current solution can't be extend returns None. Otherwise, return a
         border vertex.
         """
-        if self.vertex_status[self.border_vertex][0] == "b":
+        if self.vertex_status[self.border_vertex][0] == InducedSubtreeConfiguration.BORDER:
             return self.border_vertex
         elif self.subtree_size == 0:
             #The subtree is empty, any non rejected vertex can be add
             for v in self.vertex_status:
-                if self.vertex_status[v][0] == "a":
+                if self.vertex_status[v][0] == InducedSubtreeConfiguration.NOT_SEEN:
                     return v
         else:
             #The subtree is not empty, a vertex of the border must be add
             for v in self.vertex_status:
-                if self.vertex_status[v][0]=="b":
+                if self.vertex_status[v][0] == InducedSubtreeConfiguration.BORDER:
                     return v
         return None
 
@@ -123,35 +123,35 @@ class InducedSubtreeConfiguration(object):
         OUTPUT:
             Degree of the parent of v after the addition
         """
-        assert self.vertex_status[v][0] == "b" or ("b", None) not in \
+        assert self.vertex_status[v][0] == InducedSubtreeConfiguration.BORDER or (InducedSubtreeConfiguration.BORDER, None) not in \
                 self.vertex_status.values(), "Invalid vertex to add"
         degree = 0
         for u in self.graph.neighbor_iterator(v):
             (state, info) = self.vertex_status[u]
-            if state == "a":
-                self.vertex_status[u] = ("b", None)
+            if state == InducedSubtreeConfiguration.NOT_SEEN:
+                self.vertex_status[u] = (InducedSubtreeConfiguration.BORDER, None)
                 self.border_size += 1
-            elif state == "s":
-                degree = info+1
+            elif state == InducedSubtreeConfiguration.INCLUDED:
+                degree = info + 1
                 self.vertex_status[u] = (state, degree)
                 if info == 1:
                     self.num_leaf -= 1
-            elif state == "b":
+            elif state == InducedSubtreeConfiguration.BORDER:
                 self.border_size -= 1
-                self.num_rejected += 1
-                self.vertex_status[u] = ("r", v)
+                self.num_excluded += 1
+                self.vertex_status[u] = (InducedSubtreeConfiguration.EXCLUDED, v)
             #If the vertices is already rejected we do nothing
-        if self.vertex_status[v][0] == "b":
+        if self.vertex_status[v][0] == InducedSubtreeConfiguration.BORDER:
             #The vertex extend a current solution
-            self.vertex_status[v] = ("s", 1)
+            self.vertex_status[v] = (InducedSubtreeConfiguration.INCLUDED, 1)
             self.border_size -= 1
         else:
-            #The vertex is the first vertex to be set to "s"
-            self.vertex_status[v] = ("s", 0)
+            #The vertex is the first vertex to be set to INCLUDED
+            self.vertex_status[v] = (InducedSubtreeConfiguration.INCLUDED, 0)
         self.subtree_vertices.append(v)
         self.num_leaf += 1
         self.subtree_size += 1
-        self.user_intervention_stack.append(v)
+        self.history.append(v)
         self.lp_dist_valid = False
         return degree
 
@@ -163,24 +163,24 @@ class InducedSubtreeConfiguration(object):
         for u in self.graph.neighbor_iterator(v):
             (state, info) = self.vertex_status[u]
             #Impossible that state is available
-            if state == "b":
-                self.vertex_status[u] = ("a", None)
+            if state == InducedSubtreeConfiguration.BORDER:
+                self.vertex_status[u] = (InducedSubtreeConfiguration.NOT_SEEN, None)
                 self.border_size -= 1
-            elif state == "s":
-                self.vertex_status[u] = (state, info-1)
+            elif state == InducedSubtreeConfiguration.INCLUDED:
+                self.vertex_status[u] = (state, info - 1)
                 if info == 2:
                     self.num_leaf += 1
-            #At this point the state must be "r"
+            #At this point the state must be EXCLUDED
             elif info == v:
-                self.vertex_status[u] = ("b", None)
-                self.num_rejected -= 1
+                self.vertex_status[u] = (InducedSubtreeConfiguration.BORDER, None)
+                self.num_excluded -= 1
                 self.border_size += 1
         self.subtree_size -= 1
         if self.subtree_size > 0:
-            self.vertex_status[v] = ("b", None)
+            self.vertex_status[v] = (InducedSubtreeConfiguration.BORDER, None)
             self.border_size += 1
         else: #We remove the last vertex from the subtree
-            self.vertex_status[v] = ("a", None)
+            self.vertex_status[v] = (InducedSubtreeConfiguration.NOT_SEEN, None)
         self.num_leaf -= 1
         self.subtree_vertices.pop()
 
@@ -188,15 +188,15 @@ class InducedSubtreeConfiguration(object):
         r"""
         Sets a vertex that is not in the solution to rejected.
         When a vertex v has been rejected using this method,
-        his value in vertex_status is set to ("r",v)
+        his value in vertex_status is set to (EXCLUDED,v)
         """
-        assert self.vertex_status[v][0] == "b" or self.subtree_size == 0
-        self.vertex_status[v] = ("r", v)
+        assert self.vertex_status[v][0] == InducedSubtreeConfiguration.BORDER or self.subtree_size == 0
+        self.vertex_status[v] = (InducedSubtreeConfiguration.EXCLUDED, v)
         if self.subtree_size != 0:
             #The element we reject is on the border
             self.border_size -= 1
-        self.num_rejected += 1
-        self.user_intervention_stack.append(v)
+        self.num_excluded += 1
+        self.history.append(v)
         self.lp_dist_valid = False
 
     def _unreject_last_manual_rejection(self, v):
@@ -204,11 +204,11 @@ class InducedSubtreeConfiguration(object):
         Reverts the last manual rejection. v must be the last rejected vertex
         and the rejection must be the last modification to the structure.
         """
-        self.num_rejected -= 1
+        self.num_excluded -= 1
         if self.subtree_size == 0:
-            self.vertex_status[v] = ("a", None)
+            self.vertex_status[v] = (InducedSubtreeConfiguration.NOT_SEEN, None)
         else:
-            self.vertex_status[v] = ("b", None)
+            self.vertex_status[v] = (InducedSubtreeConfiguration.BORDER, None)
             self.border_size += 1
 
     def undo_last_user_action(self):
@@ -216,9 +216,9 @@ class InducedSubtreeConfiguration(object):
         Undo the last user intervention which is either and addition to the
         subtree or a rejection.
         """
-        v = self.user_intervention_stack.pop()
+        v = self.history.pop()
         self.lp_dist_valid = False
-        if self.vertex_status[v][0] == "s":
+        if self.vertex_status[v][0] == InducedSubtreeConfiguration.INCLUDED:
             self._remove_last_addition(v)
         else:
             self._unreject_last_manual_rejection(v)
@@ -240,10 +240,10 @@ class InducedSubtreeConfiguration(object):
         for v in self.subtree_vertices:
             yield (v, self.vertex_status[v][1])
 
-    def degree(self, u, exclude='r'):
+    def degree(self, u, exclude=EXCLUDED):
         r"""
         Compute the degree of the vertices u in the graph border excluding
-        vertices with state in exlcude. Default value for exclude is 'r'
+        vertices with state in exlcude. Default value for exclude is EXCLUDED
         """
         return sum(1 for v in self.graph.neighbor_iterator(u)
                      if self.vertex_status[v][0] not in exclude)
@@ -278,7 +278,7 @@ class InducedSubtreeConfiguration(object):
                     layer = []
                 degree = 0
                 for u in self.graph.neighbor_iterator(v):
-                    if self.vertex_status[u][0] != 'r':
+                    if self.vertex_status[u][0] != InducedSubtreeConfiguration.EXCLUDED:
                         degree += 1
                         if u not in visited:
                             queue.append((u, dist+1))
@@ -311,12 +311,12 @@ class InducedSubtreeConfiguration(object):
                 if 1 <= prev_d and prev_d < d:
                     vertices.append(layer)
                     layer = []
-                if self.vertex_status[u][0] != 's':
+                if self.vertex_status[u][0] != InducedSubtreeConfiguration.INCLUDED:
                     layer.append(u)
                 prev_d = d
                 visited.add(u)
                 for v in self.graph.neighbor_iterator(u):
-                    if self.vertex_status[v][0] != 'r' and not v in visited:
+                    if self.vertex_status[v][0] != InducedSubtreeConfiguration.EXCLUDED and not v in visited:
                         queue.append((v,d+1))
         vertices.append(layer)
         return vertices
@@ -349,7 +349,7 @@ class InducedSubtreeConfiguration(object):
         vertices_by_dist = self.non_rejected_vertices_by_distance_with_degree()
         #Adding the leaf creator
         for (v, d) in vertices_by_dist[0]:
-            if self.vertex_status[v][0] == "b":
+            if self.vertex_status[v][0] == InducedSubtreeConfiguration.BORDER:
                 current_size += 1
                 current_leaf += 1
                 self.lp_dist_dict[current_size] = current_leaf
@@ -426,7 +426,8 @@ class InducedSubtreeConfiguration(object):
 
         tree_edge = []
         for (u, v, label) in self.graph.edge_iterator():
-            if self.vertex_status[v][0] == "s" == self.vertex_status[u][0]:
+            if self.vertex_status[v][0] == InducedSubtreeConfiguration.INCLUDED\
+                                        == self.vertex_status[u][0]:
                 tree_edge.append((u,v))
 
         return self.graph.plot(vertex_colors=vertex_color,
@@ -434,8 +435,8 @@ class InducedSubtreeConfiguration(object):
 
     def __repr__(self):
         d = (self.subtree_size, self.num_leaf, self.border_size,
-                self.num_rejected)
-        s = "subtree_size:%s, num_leaf:%s, border_size:%s, num_rejected:%s" %d
+                self.num_excluded)
+        s = "subtree_size:%s, num_leaf:%s, border_size:%s, num_excluded:%s" %d
         return s
 
 class InducedSubtreeConfigurationForCube(InducedSubtreeConfiguration):
@@ -445,7 +446,7 @@ class InducedSubtreeConfigurationForCube(InducedSubtreeConfiguration):
     def __init__(self, G, max_deg, upper_bound_strategy = 'dist'):
         r"""
         Constructor of the graph border. Initialize the state of all vertices
-        to ("a", None).
+        to (NOT_SEEN, None).
 
         INPUT:
             G - The graph

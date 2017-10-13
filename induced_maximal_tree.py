@@ -42,7 +42,7 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
         """
         m = B.subtree_size
         l = B.subtree_num_leaf()
-        promising = sum([L[i]<B.leaf_potential(i) for i in range(m, n+1-B.num_rejected)])>0
+        promising = sum([L[i]<B.leaf_potential(i) for i in range(m, n+1-B.num_excluded)])>0
         next_vertex = B.vertex_to_add()
         if next_vertex == None:
             #The subtree can't be extend
@@ -105,7 +105,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
         """
         m = B.subtree_size
         l = B.subtree_num_leaf()
-        promising = sum([L[i]<B.leaf_potential(i) for i in range(m, n+1-B.num_rejected)])>0
+        promising = sum([L[i]<B.leaf_potential(i) for i in range(m, n+1-B.num_excluded)])>0
         next_vertex = B.vertex_to_add()
         if next_vertex == None:
             #The subtree can't be extend
