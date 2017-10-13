@@ -3,7 +3,7 @@ import warnings
 load('graph_border.py')
 load('flis_trees.py')
 
-def ComputeL(G, upper_bound_strategy = 'dist', algorihtm = 'general'):
+def ComputeL(G, upper_bound_strategy='dist', algorithm='general'):
     """Compute the maximal number of leaves that can be obtain in a tree
      wich is an induced subgraph of size m of G for each m between 0 and
      |G|.
@@ -12,9 +12,9 @@ def ComputeL(G, upper_bound_strategy = 'dist', algorihtm = 'general'):
         G - a graph
         upper_bound_strategy - The strategy for the upper bound (either
             'dist' or 'naive')
-        algorihtm - The algorithm used to compute de leaf function.
+        algorithm - The algorithm used to compute de leaf function.
             'tree' : The O(n^3) dynamic programming alogirhtm for tree
-            'general': The general branch and bound algorihtm for general graphs
+            'general': The general branch and bound algorithm for general graphs
             'cube': The specialization of the branch and bound for hypercubes
 
     OUTPUT:
@@ -35,9 +35,9 @@ def ComputeL(G, upper_bound_strategy = 'dist', algorihtm = 'general'):
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: None, 10: None, 11: None, 12: None}
         sage: ComputeL(graphs.PetersenGraph())[0]
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: None, 9: None, 10: None}
-        sage: ComputeL(graphs.CubeGraph(3), algorihtm = 'cube')[0]
+        sage: ComputeL(graphs.CubeGraph(3), algorithm='cube')[0]
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
-        sage: ComputeL(graphs.BalancedTree(2, 2), algorihtm = 'tree')[0]
+        sage: ComputeL(graphs.BalancedTree(2, 2), algorithm='tree')[0]
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
     """
     def treat_state():
@@ -67,8 +67,8 @@ def ComputeL(G, upper_bound_strategy = 'dist', algorihtm = 'general'):
             B.undo_last_operation()
 
     assert upper_bound_strategy in ['naive', 'dist']
-    assert algorihtm in ['general', 'cube', 'tree']
-    if algorihtm == 'general':
+    assert algorithm in ['general', 'cube', 'tree']
+    if algorithm == 'general':
         n = G.num_verts()
         L = dict([(i, None) for i in range(0, n+1)])
         max_leafed_tree = dict([(i,[]) for i in range(n+1)])
@@ -77,11 +77,11 @@ def ComputeL(G, upper_bound_strategy = 'dist', algorihtm = 'general'):
         B = Configuration(G, upper_bound_strategy)
         treat_state()
         return L, max_leafed_tree
-    elif algorihtm == 'tree':
+    elif algorithm == 'tree':
         assert G.is_tree(), "G is not a tree"
         program = LeafMapDynamicProgram(G)
         return program.leaf_map_with_example()
-    elif algorihtm == 'cube':
+    elif algorithm == 'cube':
         d = G.num_verts().bit_length() - 1
         assert 2**d == G.num_verts()
         return CubeGraphLeafFunction(d)
