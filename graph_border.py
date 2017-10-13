@@ -65,66 +65,80 @@ class Configuration(object):
     - ``border_vertex``: A candidate border vertex.
     """
 
-    def __init__(self, G, upper_bound_strategy = 'dist'):
+    def __init__(self, graph, upper_bound_strategy='dist', max_degree=Infinity):
         r"""
-        Constructor of the graph border. Initialize the state of all vertices
-        to ("a", None)
+        Constructor of an induced subtree configuration.
+
+        Some parameters are provided to improve the computation time.  For
+        instance, it is possible to parametrize how the upper bound is computed
+        (currently, only 'naive' or 'dist' are supported). Moreover, we can
+        also parametrized the max allowed degree of the vertices in the
+        subtree.
 
         INPUT:
-            G - The graph
-            upper_bound_strategy - The strategy for the leaf potential (either
-                'naive' or 'dist')
+
+        - ``graph``: The graph
+        - ``upper_bound_strategy``: The strategy for the leaf potential.
+        - ``max_degree``: The maximum allowed degree.
         """
-        self.graph = G
+        self.graph = graph
         self.subtree_vertices = []
         self.subtree_size = 0
         self.num_leaf = 0
         self.num_excluded = 0
         self.border_size = 0
         self.vertex_status = dict()
-        for v in G.vertex_iterator():
+        for v in graph.vertex_iterator():
             self.vertex_status[v] = (Configuration.NOT_SEEN, None)
         self.history = []
         assert upper_bound_strategy in ['naive', 'dist']
         self.upper_bound_strategy = upper_bound_strategy
         self.lp_dist_valid = False
         self.border_vertex = v
+        self.max_degree_allowed_in_subtree = max_degree
 
     def vertex_to_add(self):
         r"""
-        Return a vertex of the graph that can extend the current solution into a
-        tree. If the subtree is empty, it's any non-rejected vertex. If the
-        current solution can't be extend returns None. Otherwise, return a
-        border vertex.
+        Return any vertex of the graph that can included to the current
+        solution to obtain an induced subtree.
+
+        If no such vertex exists, the function returns ``None``.
+
+        OUTPUT:
+
+        A vertex or None
         """
         if self.vertex_status[self.border_vertex][0] == Configuration.BORDER:
             return self.border_vertex
         elif self.subtree_size == 0:
-            #The subtree is empty, any non rejected vertex can be add
-            for v in self.vertex_status:
-                if self.vertex_status[v][0] == Configuration.NOT_SEEN:
+            for (v,(status,_)) in self.vertex_status.iteritems():
+                if status == Configuration.NOT_SEEN:
                     return v
         else:
-            #The subtree is not empty, a vertex of the border must be add
-            for v in self.vertex_status:
-                if self.vertex_status[v][0] == Configuration.BORDER:
+            for (v,(status,_)) in self.vertex_status.iteritems():
+                if status == Configuration.BORDER:
                     return v
         return None
 
-    def add_to_subtree(self, v):
+    def include_vertex(self, v):
         r"""
-        Add a vertex of the border to the current solution or initiate a
-        solution with a first vertex.
+        Includes the vertex ``v`` to the current configuration.
+
+        Assumes that the included vertex can be safely included. Also returns
+        the degree of the only vertex ``u`` adjacent to ``v`` after the
+        inclusion
 
         INPUT:
-            v - A vertex of the border or if the subtree is empty any available
-                vertex
+
+        ``v``: A vertex
 
         OUTPUT:
-            Degree of the parent of v after the addition
+
+        An integer
         """
-        assert self.vertex_status[v][0] == Configuration.BORDER or (Configuration.BORDER, None) not in \
-                self.vertex_status.values(), "Invalid vertex to add"
+        assert self.vertex_status[v][0] == Configuration.BORDER or\
+               (Configuration.BORDER, None) not in self.vertex_status.values(),\
+               "Invalid vertex to add"
         degree = 0
         for u in self.graph.neighbor_iterator(v):
             (state, info) = self.vertex_status[u]
@@ -140,13 +154,10 @@ class Configuration(object):
                 self.border_size -= 1
                 self.num_excluded += 1
                 self.vertex_status[u] = (Configuration.EXCLUDED, v)
-            #If the vertices is already rejected we do nothing
         if self.vertex_status[v][0] == Configuration.BORDER:
-            #The vertex extend a current solution
             self.vertex_status[v] = (Configuration.INCLUDED, 1)
             self.border_size -= 1
         else:
-            #The vertex is the first vertex to be set to INCLUDED
             self.vertex_status[v] = (Configuration.INCLUDED, 0)
         self.subtree_vertices.append(v)
         self.num_leaf += 1
@@ -155,14 +166,16 @@ class Configuration(object):
         self.lp_dist_valid = False
         return degree
 
-    def _remove_last_addition(self, v):
+    def _undo_last_inclusion(self, v):
         r"""
-        Reverts the last addition process. v must be the last added vertex and
-        the addition must be the last modification to the structure.
+        Reverts the inclusion of vertex ``v``.
+        
+        The last operation must be the inclusion of vertex ``v``.
+
+        ``v``: The last included vertex
         """
         for u in self.graph.neighbor_iterator(v):
             (state, info) = self.vertex_status[u]
-            #Impossible that state is available
             if state == Configuration.BORDER:
                 self.vertex_status[u] = (Configuration.NOT_SEEN, None)
                 self.border_size -= 1
@@ -170,7 +183,6 @@ class Configuration(object):
                 self.vertex_status[u] = (state, info - 1)
                 if info == 2:
                     self.num_leaf += 1
-            #At this point the state must be EXCLUDED
             elif info == v:
                 self.vertex_status[u] = (Configuration.BORDER, None)
                 self.num_excluded -= 1
@@ -179,30 +191,35 @@ class Configuration(object):
         if self.subtree_size > 0:
             self.vertex_status[v] = (Configuration.BORDER, None)
             self.border_size += 1
-        else: #We remove the last vertex from the subtree
+        else:
             self.vertex_status[v] = (Configuration.NOT_SEEN, None)
         self.num_leaf -= 1
         self.subtree_vertices.pop()
 
     def exclude_vertex(self, v):
         r"""
-        Sets a vertex that is not in the solution to rejected.
-        When a vertex v has been rejected using this method,
-        his value in vertex_status is set to (EXCLUDED,v)
+        Forces the exclusion of vertex ``v`` from the configuration.
+
+        INPUT:
+
+        ``v``: The vertex to exclude
         """
-        assert self.vertex_status[v][0] == Configuration.BORDER or self.subtree_size == 0
+        assert self.vertex_status[v][0] == Configuration.BORDER or\
+               self.subtree_size == 0
         self.vertex_status[v] = (Configuration.EXCLUDED, v)
         if self.subtree_size != 0:
-            #The element we reject is on the border
             self.border_size -= 1
         self.num_excluded += 1
         self.history.append(v)
         self.lp_dist_valid = False
 
-    def _unreject_last_manual_rejection(self, v):
+    def _undo_last_exclusion(self, v):
         r"""
-        Reverts the last manual rejection. v must be the last rejected vertex
-        and the rejection must be the last modification to the structure.
+        Reverts the exclusion of vertex ``v``.
+        
+        The last operation must be the exclusion of vertex ``v``.
+
+        ``v``: The last excluded vertex
         """
         self.num_excluded -= 1
         if self.subtree_size == 0:
@@ -211,61 +228,75 @@ class Configuration(object):
             self.vertex_status[v] = (Configuration.BORDER, None)
             self.border_size += 1
 
-    def undo_last_user_action(self):
+    def undo_last_operation(self):
         r"""
-        Undo the last user intervention which is either and addition to the
-        subtree or a rejection.
+        Cancels the last operation on self.
+        
+        The operation is either an inclusion or an exclusion.
         """
         v = self.history.pop()
         self.lp_dist_valid = False
         if self.vertex_status[v][0] == Configuration.INCLUDED:
-            self._remove_last_addition(v)
+            self._undo_last_inclusion(v)
         else:
-            self._unreject_last_manual_rejection(v)
+            self._undo_last_exclusion(v)
 
     def subtree_num_leaf(self):
         r"""
-        Return the number of leaf in the subtree
+        Returns the number of leaf in the configuration subtree.
+
+        OUTPUT:
+
+        An integer
         """
         if self.subtree_size == 1:
             return 0
         else:
             return self.num_leaf
 
-    def subtree_vertices_with_degrees(self):
+    def _subtree_vertices_with_degrees(self):
         r"""
-        Generates the subtree vertices with their degrees
-        in pair (vertex, degree)
+        Returns a generator over ordered pairs ``(v,d)``, where ``v`` is a
+        subtree vertex and ``d`` is its degree in the subtree.
+
+        OUTPUT:
+
+        A generator of ordered pairs
         """
         for v in self.subtree_vertices:
             yield (v, self.vertex_status[v][1])
 
-    def degree(self, u, exclude=EXCLUDED):
+    def degree(self, u):
         r"""
-        Compute the degree of the vertices u in the graph border excluding
-        vertices with state in exlcude. Default value for exclude is EXCLUDED
-        """
-        return sum(1 for v in self.graph.neighbor_iterator(u)
-                     if self.vertex_status[v][0] not in exclude)
+        Computes the degree of ``u``, taking into account excluded vertices.
 
-    def non_rejected_vertices_by_distance_with_degree(self):
+        OUTPUT:
+
+        An integer
+        """
+        return sum(1 for (v,(status,_)) in self.graph.neighbor_iterator(u)\
+                     if status != Configuration.EXCLUDED)
+
+    def _partition_by_distance(self):
         r"""
-        Return a partition of the vertices that are not rejected with
+        Returns an ordered partition of the vertices that are not excluded with
         respect to their distance from the subtree internal vertices.
 
-        The first layer is distance 1 which are the leaves of the subtree and
-        the yellow vertices connected to inner vertices.
+        The `i`-th layer contains pairs of the form `(u,d)`, where `u` is a
+        vertex of degree `d` at distance exactly `i` from the inner vertices
+        from the inner vertices of the subtree, for `i \geq 1`.
 
-        The partition contains pairs (u, d) where u is the vertex
-        and d the degree of the u. The degree doesn't count rejected vertex.
+        OUTPUT:
+
+        A list of list
         """
-        assert self.subtree_size>2, "No inner vertices in the green tree"
+        assert self.subtree_size > 2,\
+               "No inner vertices in the green tree"
         vertices = []
         visited = set()
         queue = deque()
-        #Add inner vertices to the queue
         queue.extend(((u, 0) for u in self.subtree_vertices\
-                if self.vertex_status[u][1]>1))
+                             if self.vertex_status[u][1] > 1))
         layer = []
         prev_dist = 0
         while queue:
@@ -287,53 +318,43 @@ class Configuration(object):
         vertices.append(layer)
         return vertices
 
-    def non_subtree_vertices_by_distance(self):
+    def _leaf_potential_weak(self,i):
         r"""
-        Returns a partition of the non subtree vertices with respect to their
-        distance from the subtree internal vertices.
+        Compute an upper bound on the number of leaves that can be realized by
+        any extension of self of size ``i``.
+
+        This bound is rather naive and computed efficiently. It is the bound
+        used when ``upper_bound_strategy`` is set to ``naive``.
+
+        INPUT:
+
+        ``i``: The size of the extension
+
+        OUTPUT:
+
+        An integer
         """
-        vertices = []
-        visited = set()
-        queue = deque()
-        leaves = []
-        for (u,d) in self.subtree_vertices_with_degrees():
-            if d > 1: queue.append((u,0))
-            elif d == 1: leaves.append((u,1))
-        queue.extend(leaves)
-        #This if is used to speed up vertex_to_add
-        if queue:
-            self.border_vertex = queue[0][0]
-        layer = []
-        prev_d = 0
-        while queue:
-            (u, d) = queue.popleft()
-            if u not in visited:
-                if 1 <= prev_d and prev_d < d:
-                    vertices.append(layer)
-                    layer = []
-                if self.vertex_status[u][0] != Configuration.INCLUDED:
-                    layer.append(u)
-                prev_d = d
-                visited.add(u)
-                for v in self.graph.neighbor_iterator(u):
-                    if self.vertex_status[v][0] != Configuration.EXCLUDED and not v in visited:
-                        queue.append((v,d+1))
-        vertices.append(layer)
-        return vertices
+        if self.subtree_size <= i and i <= self.subtree_size + self.border_size:
+            return self.num_leaf + i - self.subtree_size
+        elif i > self.subtree_size + self.border_size:
+            return self.num_leaf + i - self.subtree_size - 1
 
-    def _max_degree(self, d):
+    def _leaf_potential_dist(self, i):
         r"""
-        Return d since nothing bound the degree  of a vertices in the subtree.
-        This method is itended to be redefine when useful
-        """
-        return d
+        Compute an upper bound on the number of leaves that can be realized by
+        any extension of self of size ``i``.
 
-    def leaf_potential_dist(self,i):
-        r"""
-        Compute an upper bound on the number of leaves that an extension of self
-        to i green vertices can reach.
+        This bound is tighter than the one returned by
+        ``_leaf_potential_weak``, but takes more time to compute. It is the
+        bound used when ``upper_bound_strategy`` is set to ``dist``.
 
-        Better bound then leaf_potential_weak but it takes more time to compute.
+        INPUT:
+
+        ``i``: The size of the extension
+
+        OUTPUT:
+
+        An integer
         """
         assert self.subtree_size > 2
         if self.lp_dist_valid:
@@ -341,13 +362,11 @@ class Configuration(object):
                 return self.lp_dist_dict[i]
             else:
                 return 0
-        #Else we compute the dictionnary
         current_size = self.subtree_size
         current_leaf = self.num_leaf
         self.lp_dist_dict = dict()
         self.lp_dist_dict[current_size] = current_leaf
-        vertices_by_dist = self.non_rejected_vertices_by_distance_with_degree()
-        #Adding the leaf creator
+        vertices_by_dist = self._partition_by_distance()
         for (v, d) in vertices_by_dist[0]:
             if self.vertex_status[v][0] == Configuration.BORDER:
                 current_size += 1
@@ -366,48 +385,48 @@ class Configuration(object):
                         heapq.heappush(priority_queue, (-d, v))
                 current_dist += 1
             current_leaf -= 1
-            leaf_to_add = min(self._max_degree(degree)-1, max_size-current_size)
+            leaf_to_add = min(min(self.max_degree_allowed_in_subtree, degree) - 1,\
+                              max_size-current_size)
             for _ in range(leaf_to_add):
                 current_size += 1
                 current_leaf += 1
                 self.lp_dist_dict[current_size] = current_leaf
         self.lp_dist_valid = True
-        return self.leaf_potential_dist(i)
-
-    def leaf_potential_weak(self,i):
-        r"""
-        Evaluate a maximal potential number of leaf for a subtree of i
-        vertices build from the current subtree.
-
-        The size of the tree must be bigger than the current tree size.
-        """
-        if self.subtree_size <= i and i <= self.subtree_size + self.border_size:
-            return self.num_leaf + i - self.subtree_size
-        elif i > self.subtree_size + self.border_size:
-            return self.num_leaf + i - self.subtree_size - 1
+        return self._leaf_potential_dist(i)
 
     def leaf_potential(self, i):
         r"""
-        Compute an upper bound on the number of leaf that can be reach by
-        extending the current configuration to i vertices
+        Computes an upper bound on the number of leaves that can be realized by
+        any extension of self of size ``i``.
+
+        The bounding strategy depends on the value of ``upper_bound_strategy``.
+
+        INPUT:
+
+        ``i``: The size of the extension
+
+        OUTPUT:
+
+        An integer
         """
         assert i >= self.subtree_size, "The size of the tree is not big enough"
         if self.upper_bound_strategy == 'naive' or self.subtree_size <= 2:
-            return self.leaf_potential_weak(i)
+            return self._leaf_potential_weak(i)
         else:
-            return self.leaf_potential_dist(i)
+            return self._leaf_potential_dist(i)
 
     def plot(self):
         r"""
-        Plot a graph representation of the graph bordrer with following
-        convention for node colors:
-            green: The node is in the subtree
-            yellow: The vertex is on the border
-            red: The vertex is rejected by an other vertex
-            black:The vertex is rejected by the user
-            blue: If the vertex is available
+        Returns a plot of self.
 
-        Edges of the subtree are green.
+        The node are colored according to the following rules:
+
+        - *green* if the node is in the subtree;
+        - *red* if the vertex is excluded;
+        - *yellow* if the vertex is on the border;
+        - *blue* otherwise.
+
+        Moreover, edges belonging to the induced subtree are colored in green.
         """
         vertex_color = {"blue": [], "yellow": [], "black": [], "red": [], "green": []}
         for v in self.graph.vertex_iterator():
@@ -434,32 +453,10 @@ class Configuration(object):
                 edge_colors={"green": tree_edge})
 
     def __repr__(self):
+        r"""
+        Returns a string representation of self.
+        """
         d = (self.subtree_size, self.num_leaf, self.border_size,
                 self.num_excluded)
         s = "subtree_size:%s, num_leaf:%s, border_size:%s, num_excluded:%s" %d
         return s
-
-class ConfigurationForCube(Configuration):
-    r"""
-    Specilization of graph border classes for cube
-    """
-    def __init__(self, G, max_deg, upper_bound_strategy = 'dist'):
-        r"""
-        Constructor of the graph border. Initialize the state of all vertices
-        to (NOT_SEEN, None).
-
-        INPUT:
-            G - The graph
-            max_deg - The maximal degree authorized for a vertex in the subtree
-            upper_bound_strategy - The strategy for the leaf potential (either
-                'naive' or 'dist')
-        """
-
-        Configuration.__init__(self, G, upper_bound_strategy)
-        self.max_deg = max_deg
-
-    def _max_degree(self, d):
-        r"""
-        Return the minimum of then and self.max_deg
-        """
-        return min (d, self.max_deg)
