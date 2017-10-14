@@ -42,7 +42,7 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
         """
         m = B.subtree_size
         l = B.subtree_num_leaf()
-        promising = sum([L[i]<B.leaf_potential(i) for i in range(m, n+1-B.num_rejected)])>0
+        promising = sum([L[i]<B.leaf_potential(i) for i in range(m, n+1-B.num_excluded)])>0
         next_vertex = B.vertex_to_add()
         if next_vertex == None:
             #The subtree can't be extend
@@ -52,12 +52,12 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
                 max_leafed_tree[m] = [copy(B.subtree_vertices)]
                 L[m] = l
         elif promising:
-            B.add_to_subtree(next_vertex)
+            B.include_vertex(next_vertex)
             treat_state()
-            B.undo_last_user_action()
-            B.reject_vertex(next_vertex)
+            B.undo_last_operation()
+            B.exclude_vertex(next_vertex)
             treat_state()
-            B.undo_last_user_action()
+            B.undo_last_operation()
 
     assert upper_bound_strategy in ['naive', 'dist']
     n = G.num_verts()
@@ -65,7 +65,7 @@ def ComputeL(G, upper_bound_strategy = 'dist'):
     max_leafed_tree = dict([(i,[]) for i in range(n+1)])
     L[0] = 0
     max_leafed_tree[0] = [[]]
-    B = GraphBorder(G, upper_bound_strategy)
+    B = Configuration(G, upper_bound_strategy)
     treat_state()
     return L, max_leafed_tree
 
@@ -105,7 +105,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
         """
         m = B.subtree_size
         l = B.subtree_num_leaf()
-        promising = sum([L[i]<B.leaf_potential(i) for i in range(m, n+1-B.num_rejected)])>0
+        promising = sum([L[i]<B.leaf_potential(i) for i in range(m, n+1-B.num_excluded)])>0
         next_vertex = B.vertex_to_add()
         if next_vertex == None:
             #The subtree can't be extend
@@ -115,13 +115,13 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
                 max_leafed_tree[m] = [copy(B.subtree_vertices)]
                 L[m] = l
         elif promising:
-            degree = B.add_to_subtree(next_vertex)
+            degree = B.include_vertex(next_vertex)
             if degree <= i:
                 treat_state(max_deg)
-            B.undo_last_user_action()
-            B.reject_vertex(next_vertex)
+            B.undo_last_operation()
+            B.exclude_vertex(next_vertex)
             treat_state(max_deg)
-            B.undo_last_user_action()
+            B.undo_last_operation()
 
     assert upper_bound_strategy in ['naive', 'dist']
     #Number of vertices in the biggest induced snake in cube
@@ -153,14 +153,14 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
     #Main computations
     for i in range(d-1, 2, -1):
         #Initialization of a starting configuration with a i-pode
-        B = GraphBorderForCube(G, i, upper_bound_strategy)
-        B.add_to_subtree(base_vertex)
+        B = ConfigurationForCube(G, i, upper_bound_strategy)
+        B.include_vertex(base_vertex)
         for j in range(d):
             if j < i:
-                B.add_to_subtree(star_vertices[j])
+                B.include_vertex(star_vertices[j])
             else:
-                B.reject_vertex(star_vertices[j])
-        B.add_to_subtree(extension_vertex)
+                B.exclude_vertex(star_vertices[j])
+        B.include_vertex(extension_vertex)
         treat_state(i)
         if partial_output:
             print "Exploration for %s-pode complete at %s" %(i, str(datetime.now()))
