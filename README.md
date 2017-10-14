@@ -34,11 +34,11 @@ the hypercube graph of dimension 6.
 
 The main function is `ComputeL(G)`. This function compute the leaf function of
 a general graph `G`. Special optimization can be used for particular cases
-using the optional parameter `algorihtm`.  The available options are:
+using the optional parameter `algorithm`.  The available options are:
 
 - `general`: uses the branch and bound algorithm
 - `tree`: uses a O(n^3) dynamic programming algorithm
-- `cube`: uses a specialization of the general branch and bound algorihtm for cube graph.
+- `cube`: uses a specialization of the general branch and bound algorithm for cube graph.
 
 Below are some examples that can be reproduced once Sagemath is started and the
 three Python files loaded:
@@ -54,9 +54,9 @@ sage: ComputeL(graphs.CompleteBipartiteGraph(7,5))[0]
 {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: None, 10: None, 11: None, 12: None}
 sage: ComputeL(graphs.PetersenGraph())[0]
 {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: None, 9: None, 10: None}
-sage: ComputeL(graphs.CubeGraph(3), algorihtm = 'cube')[0]
+sage: ComputeL(graphs.CubeGraph(3), algorithm = 'cube')[0]
 {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
-sage: ComputeL(graphs.BalancedTree(2, 2), algorihtm = 'tree')[0]
+sage: ComputeL(graphs.BalancedTree(2, 2), algorithm = 'tree')[0]
 {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
 ```
 
