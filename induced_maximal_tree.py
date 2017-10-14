@@ -95,6 +95,8 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
     EXAMPLES:
         sage: CubeGraphLeafFunction(3)[0]
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
+        sage: list(CubeGraphLeafFunction(4)[0].values())
+        [0, 0, 2, 2, 3, 4, 3, 4, 3, 4, None, None, None, None, None, None, None]
     """
     def treat_state(max_deg):
         r"""
@@ -153,7 +155,7 @@ def CubeGraphLeafFunction(d, upper_bound_strategy = 'dist',
     #Main computations
     for i in range(d-1, 2, -1):
         #Initialization of a starting configuration with a i-pode
-        B = ConfigurationForCube(G, i, upper_bound_strategy)
+        B = Configuration(G, upper_bound_strategy, i)
         B.include_vertex(base_vertex)
         for j in range(d):
             if j < i:
