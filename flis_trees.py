@@ -43,6 +43,9 @@ class LeafMapDynamicProgram(object):
         self.edgeL = {}
         self.L = {}
         self.sizes = {}
+        self.forest_edges = {}
+        self.forest_size = {}
+        self.forestL = {}
 
     def subtree_size(self, u, v):
         r"""
@@ -72,10 +75,9 @@ class LeafMapDynamicProgram(object):
                     for w in self.g[v] if w != u) + 1
         return self.sizes[(u, v)]
 
-    def leaf_map_with_example(self):
-        # TODO Implement this function
-        max_leafed_tree = dict([(i,[["an example"]]) for i in range(self.g.num_verts())])
-        return self.leaf_map(), max_leafed_tree
+    # ----------------------- #
+    # Computing the leaf maps #
+    # ----------------------- #
 
     def leaf_map(self):
         r"""
@@ -164,13 +166,13 @@ class LeafMapDynamicProgram(object):
             if i == 0 or i == 1:
                 self.directedL[(u, v)][i] = i
             else:
-                forest = [(v, w) for w in self.g[v] if w != u]
-                self.directedL[(u, v)][i] = self.Lf(forest, i - 1)
+                self.directedL[(u, v)][i] = self.Lf(u, v, 0, i - 1)
         return self.directedL[(u, v)][i]
 
-    def Lf(self, forest, i):
+    def Lf(self, u, v, k, i):
         r"""
-        Returns the leaf map value for the forest `forest` for size `i`.
+        Returns the leaf map value for the forest formed by the rooted subtree
+        `0, 1, ..., k` of `v` in direction `u \rightarrow v` for size `i`.
 
         More precisely, if `F = \{T_1,\ldots,T_k\}` is a rooted forest then
         `self.Lf(F, i)` returns the maximal number of leaves that can be
@@ -182,20 +184,66 @@ class LeafMapDynamicProgram(object):
 
         INPUT:
 
-        - ``forest``: the induced subforest
+        - ``u, v``: vertices such that ``(u, v)`` is an arc
+        - ``k``: the index of the first child in the forest
         - ``i``: the size of the induced subforest
 
         OUTPUT:
 
         A non negative integer
         """
-        (u, v) = forest[0]
-        if len(forest) == 1:
-            return self.Lt(u, v, i)
+        if (u, v) not in self.forest_edges:
+            self.forest_edges[(u, v)] = [(v, w) for w in self.g[v] if w != u]
+            self.forest_size[(u, v)] = len(self.forest_edges[(u, v)])
+            self.forestL[(u, v)] = [{} for _ in range(self.forest_size[(u, v)])]
+        if i not in self.forestL[(u, v)][k]:
+            forest_edges = self.forest_edges[(u, v)]
+            forest_size = self.forest_size[(u, v)]
+            w = forest_edges[k][1]
+            if k == forest_size - 1:
+                self.forestL[(u, v)][k][i] = self.Lt(v, w, i)
+            else:
+                nt1 = self.subtree_size(u, v)
+                nfp = sum(self.subtree_size(x, y) for (x, y) in forest_edges[k+1:])
+                interval = range(max(0, i - nfp), min(nt1, i) + 1)
+                self.forestL[(u, v)][k][i] =\
+                    max(self.Lt(u, v, j) + self.Lf(u, v, k + 1, i - j)\
+                        for j in interval)
+        return self.forestL[(u, v)][k][i]
+
+    def leaf_map_with_example(self):
+        examples = dict([(i,self.example(i)) for i in range(self.g.num_verts())])
+        return (self.leaf_map(), examples)
+
+    # -------------------- #
+    # Retrieving solutions #
+    # -------------------- #
+
+    def directed_example(self, u, v, i):
+        if i == 0:
+            return []
+        elif i == 1:
+            return [v]
         else:
-            forestp = forest[1:]
-            nt1 = self.subtree_size(u, v)
-            nfp = sum(self.subtree_size(x, y) for (x, y) in forestp)
-            interval = range(max(0, i - nfp), min(nt1, i) + 1)
-            return max(self.Lt(u, v, j) + self.Lf(forestp, i - j)\
-                   for j in interval)
+            forest = [(v, w) for w in self.g[v] if w != u]
+            if len(forest) == 1:
+                return [v] + self.directed_example(v, forest[0][1], i - 1)
+            else:
+                return ['(%s,%s,%s)' % (u,v,i)]
+
+    def example(self, i):
+        if i == 0:
+            return [[]]
+        elif i == 1:
+            return [[next(self.g.vertex_iterator())]]
+        else:
+            L = self.leaf_map()
+            edgeL = self.edge_leaf_maps()
+            (u, v) = next(e for e in edgeL if edgeL[e][i] == L[i])
+            ntuv = self.subtree_size(u, v)
+            ntvu = self.subtree_size(v, u)
+            interval = range(max(1, i - ntvu), min(i - 1, ntuv) + 1)
+            j = next(j for j in interval\
+                       if self.Lt(u, v, j) + self.Lt(v, u, i - j) == edgeL[(u,v)][i])
+            return [self.directed_example(u, v, j) +\
+                    self.directed_example(v, u, i - j)]
