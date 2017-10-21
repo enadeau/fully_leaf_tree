@@ -171,7 +171,7 @@ class LeafMapDynamicProgram(object):
 
     def Lf(self, u, v, k, i):
         r"""
-        Returns the leaf map value for the forest formed by the rooted subtree
+        Returns the leaf map value for the forest formed by the rooted subtrees
         `0, 1, ..., k` of `v` in direction `u \rightarrow v` for size `i`.
 
         More precisely, if `F = \{T_1,\ldots,T_k\}` is a rooted forest then
@@ -203,35 +203,112 @@ class LeafMapDynamicProgram(object):
             if k == forest_size - 1:
                 self.forestL[(u, v)][k][i] = self.Lt(v, w, i)
             else:
-                nt1 = self.subtree_size(u, v)
+                nt1 = self.subtree_size(v, w)
                 nfp = sum(self.subtree_size(x, y) for (x, y) in forest_edges[k+1:])
                 interval = range(max(0, i - nfp), min(nt1, i) + 1)
                 self.forestL[(u, v)][k][i] =\
-                    max(self.Lt(u, v, j) + self.Lf(u, v, k + 1, i - j)\
+                    max(self.Lt(v, w, j) + self.Lf(u, v, k + 1, i - j)\
                         for j in interval)
         return self.forestL[(u, v)][k][i]
 
     def leaf_map_with_example(self):
-        examples = dict([(i,self.example(i)) for i in range(self.g.num_verts())])
+        r"""
+        Returns the leaf function together with a dictionary giving fully
+        leafed induced subtrees for each possible size.
+
+        OUTPUT:
+
+            An ordered pair of dictionaries
+
+        EXAMPLE:
+
+            sage: T = graphs.BalancedTree(2, 2)
+            sage: program = LeafMapDynamicProgram(T)
+            sage: (L,E) = program.leaf_map_with_example()
+            sage: L
+            {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
+            sage: E
+            {0: [[]],
+             1: [[0]],
+             2: [[1, 0]],
+             3: [[1, 0, 2]],
+             4: [[1, 3, 4, 0]],
+             5: [[1, 0, 2, 5, 6]],
+             6: [[1, 4, 0, 2, 5, 6]],
+             7: [[1, 3, 4, 0, 2, 5, 6]]}
+        """
+        examples = dict([(i,self.example(i)) for i in range(self.g.num_verts() + 1)])
         return (self.leaf_map(), examples)
 
     # -------------------- #
     # Retrieving solutions #
     # -------------------- #
 
-    def directed_example(self, u, v, i):
+    def directed_tree_example(self, u, v, i):
+        r"""
+        Returns a fully leafed directed subtree of size `i` of the subtree
+        rooted in `v` in direction `u \rightarrow v`.
+
+        INPUT:
+
+        - ``u, v``: vertices such that ``(u, v)`` is an arc
+        - ``i``: the size of the directed subtree
+
+        OUTPUT
+
+        A list of vertices
+        """
         if i == 0:
             return []
-        elif i == 1:
-            return [v]
         else:
-            forest = [(v, w) for w in self.g[v] if w != u]
-            if len(forest) == 1:
-                return [v] + self.directed_example(v, forest[0][1], i - 1)
+            return [v] + self.directed_forest_example(u, v, 0, i - 1)
+
+    def directed_forest_example(self, u, v, k, i):
+        r"""
+        Returns a fully leafed directed subforest of size `i` of the forest
+        formed by the rooted subtrees of `v` in direction `u \rightarrow v`.
+
+        INPUT:
+
+        - ``u, v``: vertices such that ``(u, v)`` is an arc
+        - ``k``: the index of the first child in the forest
+        - ``i``: the size of the directed subforest
+
+        OUTPUT
+
+        A list of vertices
+        """
+        if i == 0:
+            return []
+        else:
+            forest_edges = self.forest_edges[(u, v)]
+            forest_size = self.forest_size[(u, v)]
+            forestL = self.forestL[(u, v)]
+            w = forest_edges[k][1]
+            if k == forest_size - 1:
+                return self.directed_tree_example(v, w, i)
             else:
-                return ['(%s,%s,%s)' % (u,v,i)]
+                nt1 = self.subtree_size(v, w)
+                nfp = sum(self.subtree_size(x, y) for (x, y) in forest_edges[k+1:])
+                interval = range(max(0, i - nfp), min(nt1, i) + 1)
+                j = next(j for j in interval if self.Lt(v, w, j) +\
+                        self.Lf(u, v, k + 1, i - j) == forestL[k][i])
+                return self.directed_tree_example(v, w, j) +\
+                       self.directed_forest_example(u, v, k + 1, i - j)
+
 
     def example(self, i):
+        r"""
+        Returns a fully leafed induced subtree of size ``i``.
+
+        INPUT:
+
+        ``i``: the number of vertices in the tree
+
+        OUTPUT
+
+        A list of lists
+        """
         if i == 0:
             return [[]]
         elif i == 1:
@@ -245,5 +322,5 @@ class LeafMapDynamicProgram(object):
             interval = range(max(1, i - ntvu), min(i - 1, ntuv) + 1)
             j = next(j for j in interval\
                        if self.Lt(u, v, j) + self.Lt(v, u, i - j) == edgeL[(u,v)][i])
-            return [self.directed_example(u, v, j) +\
-                    self.directed_example(v, u, i - j)]
+            return [self.directed_tree_example(u, v, j) +\
+                    self.directed_tree_example(v, u, i - j)]
