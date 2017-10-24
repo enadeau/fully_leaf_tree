@@ -65,7 +65,7 @@ def leaf_map(graph, algorithm='general', upper_bound_strategy='dist'):
     """
     def explore_configuration():
         r"""
-        Explore all interesting subtrees of ``G`` and update the dictionnary
+        Explore all interesting subtrees of ``graph`` and update the dictionnary
         ``L`` to keep track of the maximum.
         """
         m = B.subtree_size
@@ -90,21 +90,21 @@ def leaf_map(graph, algorithm='general', upper_bound_strategy='dist'):
     assert upper_bound_strategy in ['naive', 'dist']
     assert algorithm in ['general', 'cube', 'tree']
     if algorithm == 'general':
-        n = G.num_verts()
+        n = graph.num_verts()
         L = dict([(i, None) for i in range(0, n+1)])
         max_leafed_tree = dict([(i, []) for i in range(n+1)])
         L[0] = 0
         max_leafed_tree[0] = [[]]
-        B = Configuration(G, upper_bound_strategy)
+        B = Configuration(graph, upper_bound_strategy)
         explore_configuration()
         return L, max_leafed_tree
     elif algorithm == 'tree':
-        assert G.is_tree(), "G is not a tree"
-        program = LeafMapDynamicProgram(G)
+        assert graph.is_tree(), "graph is not a tree"
+        program = LeafMapDynamicProgram(graph)
         return program.leaf_map_with_example()
     elif algorithm == 'cube':
-        d = G.num_verts().bit_length() - 1
-        assert G.num_verts() == 2 **d
+        d = graph.num_verts().bit_length() - 1
+        assert graph.num_verts() == 2 **d
         return _cube_graph_leaf_map(d)
 
 def _cube_graph_leaf_map(d, upper_bound_strategy='dist', save_progress=False):
@@ -126,7 +126,7 @@ def _cube_graph_leaf_map(d, upper_bound_strategy='dist', save_progress=False):
     A pair ``(L, E)`` where ``L`` is a dictionnary representing the leaf
     function and ``E`` a dictionnary of list of examples of fully leafed trees
     for each size.  If ``L[i] == None`` no induced of size ``i`` exists in
-    ``G``.
+    ``graph``.
 
     ALGORITHM:
 
@@ -143,7 +143,8 @@ def _cube_graph_leaf_map(d, upper_bound_strategy='dist', save_progress=False):
     def explore_configuration(max_deg):
         r"""
         Explore all the possible subtrees with maximum degree ``max_deg`` of
-        ``G`` and update the dictionnary ``L`` to keep track of the maximum.
+        ``graph`` and update the dictionnary ``L`` to keep track of the
+        maximum.
 
         Branchs with including/excluding a vertex of the subtree.
         """
@@ -173,8 +174,8 @@ def _cube_graph_leaf_map(d, upper_bound_strategy='dist', save_progress=False):
     base_vertex = '0' * d
     star_vertices = ['0' * i + '1' + '0' * (d - i - 1) for i in range(d)]
     extension_vertex = '1' + '0' * (d - 2) + '1'
-    G = graphs.CubeGraph(d)
-    n = G.num_verts()
+    graph = graphs.CubeGraph(d)
+    n = graph.num_verts()
     L = dict([(i, None) for i in range(n + 1)])
     max_leafed_tree = dict([(i, []) for i in range(n + 1)])
     # Initialization for small value
@@ -196,7 +197,7 @@ def _cube_graph_leaf_map(d, upper_bound_strategy='dist', save_progress=False):
     # Main computations
     for i in range(d - 1, 2, -1):
         # Initialization of a starting configuration with a i-pode
-        B = Configuration(G, upper_bound_strategy, i)
+        B = Configuration(graph, upper_bound_strategy, i)
         B.include_vertex(base_vertex)
         for j in range(d):
             if j < i:
