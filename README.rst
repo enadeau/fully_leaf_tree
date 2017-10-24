@@ -35,10 +35,9 @@ Dependencies
 How to use
 ==========
 
-The main function is ``LeafFunction(G)``. This function compute the leaf
-function of a general graph ``G``. Special optimization can be used for
-particular cases using the optional parameter ``algorithm``. The available
-options are:
+The main function is ``leaf_map(G)``. This function compute the leaf function
+of a general graph ``G``. Special optimization can be used for particular cases
+using the optional parameter ``algorithm``. The available options are:
 
 - ``'general'``: The branch and bound algorithm for general graphs;
 - ``'tree'``: A polynomial time algorithm based on dynamic programming;
@@ -46,24 +45,23 @@ options are:
   symmetries of the hypercubes.
 
 Below are some examples that can be reproduced once Sagemath is started and the
-three Python files loaded:
+three Python files loaded::
 
-.. code:: python
-
-   sage: LeafFunction(graphs.CompleteGraph(7))[0]
-   {0: 0, 1: 0, 2: 2, 3: None, 4: None, 5: None, 6: None, 7: None}
-   sage: LeafFunction(graphs.CycleGraph(10))[0]
-   {0: 0, 1: 0, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: None}
-   sage: LeafFunction(graphs.WheelGraph(11))[0]
-   {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 2, 8: 2, 9: 2, 10: None, 11: None}
-   sage: LeafFunction(graphs.CompleteBipartiteGraph(7,5))[0]
-   {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: None, 10: None, 11: None, 12: None}
-   sage: LeafFunction(graphs.PetersenGraph())[0]
-   {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: None, 9: None, 10: None}
-   sage: LeafFunction(graphs.CubeGraph(3), algorithm = 'cube')[0]
-   {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
-   sage: LeafFunction(graphs.BalancedTree(2, 2), algorithm = 'tree')[0]
-   {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
+    sage: load('induced_maximal_tree.py')
+    sage: leaf_map(graphs.CompleteGraph(7))[0]
+    {0: 0, 1: 0, 2: 2, 3: None, 4: None, 5: None, 6: None, 7: None}
+    sage: leaf_map(graphs.CycleGraph(10))[0]
+    {0: 0, 1: 0, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: None}
+    sage: leaf_map(graphs.WheelGraph(11))[0]
+    {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 2, 8: 2, 9: 2, 10: None, 11: None}
+    sage: leaf_map(graphs.CompleteBipartiteGraph(7,5))[0]
+    {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: None, 10: None, 11: None, 12: None}
+    sage: leaf_map(graphs.PetersenGraph())[0]
+    {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: None, 9: None, 10: None}
+    sage: leaf_map(graphs.CubeGraph(3), algorithm = 'cube')[0]
+    {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
+    sage: leaf_map(graphs.BalancedTree(2, 2), algorithm = 'tree')[0]
+    {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
 
 License
 =======
