@@ -19,8 +19,6 @@ def LeafFunction(G, upper_bound_strategy='dist', algorithm='general'):
     function whose domain is {0,1,...,n} and such that L_G(i) is the number of
     leaves of a fully leafed induced subtree of size i.
 
-    L[i] = None indicate that no induced subtree of this size exist.
-
     INPUT:
 
     - ``G``: a graph
