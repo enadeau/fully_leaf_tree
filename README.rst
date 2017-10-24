@@ -63,7 +63,7 @@ three Python files loaded::
     sage: leaf_map(graphs.BalancedTree(2, 2), algorithm='tree')[0]
     {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
 
-Some additional examples with pictures::
+Below are additional examples with pictures. A ternary tree:
 
     sage: load('flis_graphs.py')
     sage: B = graphs.BalancedTree(3, 2)
@@ -77,6 +77,21 @@ Some additional examples with pictures::
     sage: G.show(figsize=[14,4])
 
 .. image:: images/flis-balanced-tree.png
+
+And the Petersen graph::
+
+    sage: load('flis_graphs.py')
+    sage: P = graphs.PetersenGraph()
+    sage: (L,E) = leaf_map(P, algorithm='general')
+    sage: def plot_subgraph(graph, subgraph):
+    ....:     vertex_colors = {}
+    ....:     vertex_colors['white'] = set(graph) - set(subgraph)
+    ....:     vertex_colors['green'] = subgraph
+    ....:     return graph.plot(vertex_colors=vertex_colors, figsize=(3,3))
+    sage: G = graphics_array([plot_subgraph(P, E[i][0]) for i in range(8)], 2, 4)
+    sage: G.show(figsize=[14,7])
+
+.. image:: images/flis-petersen.png
 
 License
 =======
