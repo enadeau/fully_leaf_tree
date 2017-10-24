@@ -32,32 +32,32 @@ the hypercube graph of dimension 6.
 
 ## How to use
 
-The two main functions are `ComputeL(G)` and `CubeGraphLeafFunction(d)`.
+The main function is `ComputeL(G)`. This function compute the leaf function of
+a general graph `G`. Special optimization can be used for particular cases
+using the optional parameter `algorithm`.  The available options are:
 
-- `ComputeL(G)` computes the leaf function for a general graph `G`;
-- `CubeGraphLeafFunction(d)` optimizes `ComputeL(Q_d)` in the special case
-  where `Q_d` is the hypercube graph of dimension `d`. It also returns examples
-  of induced subtrees that reached the maximal number of leaves.
+- `general`: uses the branch and bound algorithm
+- `tree`: uses a O(n^3) dynamic programming algorithm
+- `cube`: uses a specialization of the general branch and bound algorithm for cube graph.
 
 Below are some examples that can be reproduced once Sagemath is started and the
-two Python files loaded:
+three Python files loaded:
 
 ```python
-sage: ComputeL(graphs.CompleteGraph(7))
-{0: 0, 1: 0, 2: 2, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
-sage: ComputeL(graphs.CycleGraph(10))
-{0: 0, 1: 0, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 0}
-sage: ComputeL(graphs.WheelGraph(11))
-{0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 2, 8: 2, 9: 2, 10: 0, 11: 0}
-sage: ComputeL(graphs.CompleteBipartiteGraph(7,5))
-{0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 0, 10: 0, 11: 0, 12: 0}
-sage: ComputeL(graphs.PetersenGraph())
-{0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: 0, 9: 0, 10: 0}
-sage: ComputeL(graphs.CubeGraph(3))
-{0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: 0, 7: 0, 8: 0}
-sage: (L, E) = CubeGraphLeafFunction(3) #L is the leaf function and E the dictionnary of examples
-sage: L
-{0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: 0, 7: 0, 8: 0}
+sage: ComputeL(graphs.CompleteGraph(7))[0]
+{0: 0, 1: 0, 2: 2, 3: None, 4: None, 5: None, 6: None, 7: None}
+sage: ComputeL(graphs.CycleGraph(10))[0]
+{0: 0, 1: 0, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: None}
+sage: ComputeL(graphs.WheelGraph(11))[0]
+{0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 2, 8: 2, 9: 2, 10: None, 11: None}
+sage: ComputeL(graphs.CompleteBipartiteGraph(7,5))[0]
+{0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: None, 10: None, 11: None, 12: None}
+sage: ComputeL(graphs.PetersenGraph())[0]
+{0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: None, 9: None, 10: None}
+sage: ComputeL(graphs.CubeGraph(3), algorithm = 'cube')[0]
+{0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
+sage: ComputeL(graphs.BalancedTree(2, 2), algorithm = 'tree')[0]
+{0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
 ```
 
 License
