@@ -63,6 +63,21 @@ three Python files loaded::
     sage: leaf_map(graphs.BalancedTree(2, 2), algorithm='tree')[0]
     {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
 
+Some additional examples with pictures::
+
+    sage: load('flis_graphs.py')
+    sage: B = graphs.BalancedTree(3, 2)
+    sage: (L,E) = leaf_map(B, algorithm='tree')
+    sage: def plot_subgraph(graph, subgraph):
+    ....:     vertex_colors = {}
+    ....:     vertex_colors['white'] = set(graph) - set(subgraph)
+    ....:     vertex_colors['green'] = subgraph
+    ....:     return graph.plot(vertex_colors=vertex_colors, figsize=(3,3))
+    sage: G = graphics_array([plot_subgraph(B, E[i][0]) for i in range(14)], 2, 7)
+    sage: G.show(figsize=[14,4])
+
+.. image:: images/flis-balanced-tree.png
+
 License
 =======
 
