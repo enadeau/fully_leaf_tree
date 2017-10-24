@@ -91,8 +91,8 @@ def leaf_map(graph, algorithm='general', upper_bound_strategy='dist'):
     assert algorithm in ['general', 'cube', 'tree']
     if algorithm == 'general':
         n = graph.num_verts()
-        L = dict([(i, None) for i in range(0, n+1)])
-        max_leafed_tree = dict([(i, []) for i in range(n+1)])
+        L = dict([(i, None) for i in range(0, n + 1)])
+        max_leafed_tree = dict([(i, []) for i in range(n + 1)])
         L[0] = 0
         max_leafed_tree[0] = [[]]
         B = Configuration(graph, upper_bound_strategy)
@@ -104,7 +104,7 @@ def leaf_map(graph, algorithm='general', upper_bound_strategy='dist'):
         return program.leaf_map_with_example()
     elif algorithm == 'cube':
         d = graph.num_verts().bit_length() - 1
-        assert graph.num_verts() == 2 **d
+        assert graph.num_verts() == 2 ** d
         return _cube_graph_leaf_map(d)
 
 def _cube_graph_leaf_map(d, upper_bound_strategy='dist', save_progress=False):
@@ -142,11 +142,9 @@ def _cube_graph_leaf_map(d, upper_bound_strategy='dist', save_progress=False):
     """
     def explore_configuration(max_deg):
         r"""
-        Explore all the possible subtrees with maximum degree ``max_deg`` of
-        ``graph`` and update the dictionnary ``L`` to keep track of the
+        Explores all the possible subtrees with maximum degree ``max_deg`` of
+        ``graph`` and updates the dictionnary ``L`` to keep track of the
         maximum.
-
-        Branchs with including/excluding a vertex of the subtree.
         """
         m = B.subtree_size
         l = B.subtree_num_leaf()
@@ -222,5 +220,5 @@ def _cube_graph_leaf_map(d, upper_bound_strategy='dist', save_progress=False):
                 max_leafed_tree[5] = [['000', '100', '110', '111', '011']]
             else:
                 warnings.warn(("Warning: This program cannot return an example"
-                        " of fully leafed tree of size %s" %i))
+                        " of fully leafed tree of size %s" % i))
     return (L, max_leafed_tree)
