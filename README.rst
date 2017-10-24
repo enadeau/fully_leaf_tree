@@ -58,9 +58,9 @@ three Python files loaded::
     {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: None, 10: None, 11: None, 12: None}
     sage: leaf_map(graphs.PetersenGraph())[0]
     {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: None, 9: None, 10: None}
-    sage: leaf_map(graphs.CubeGraph(3), algorithm = 'cube')[0]
+    sage: leaf_map(graphs.CubeGraph(3), algorithm='cube')[0]
     {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
-    sage: leaf_map(graphs.BalancedTree(2, 2), algorithm = 'tree')[0]
+    sage: leaf_map(graphs.BalancedTree(2, 2), algorithm='tree')[0]
     {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
 
 License
