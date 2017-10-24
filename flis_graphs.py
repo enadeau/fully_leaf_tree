@@ -1,6 +1,6 @@
 from datetime import datetime
 import warnings
-load('graph_border.py')
+load('configuration.py')
 load('flis_trees.py')
 
 def leaf_map(graph, algorithm='general', upper_bound_strategy='dist'):

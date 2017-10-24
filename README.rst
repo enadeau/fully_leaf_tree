@@ -47,7 +47,7 @@ using the optional parameter ``algorithm``. The available options are:
 Below are some examples that can be reproduced once Sagemath is started and the
 three Python files loaded::
 
-    sage: load('induced_maximal_tree.py')
+    sage: load('flis_graphs.py')
     sage: leaf_map(graphs.CompleteGraph(7))[0]
     {0: 0, 1: 0, 2: 2, 3: None, 4: None, 5: None, 6: None, 7: None}
     sage: leaf_map(graphs.CycleGraph(10))[0]
