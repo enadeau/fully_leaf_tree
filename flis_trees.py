@@ -1,31 +1,4 @@
-# ---- #
-# Util #
-# ---- #
-
-def directed_edges_iter(g):
-    r"""
-    Returns a generator over all directions of the edge of `g`.
-
-    INPUT:
-
-    - ``g``: an undirected graph
-
-    OUTPUT:
-
-    A generator over ordered pairs
-
-    EXAMPLE:
-
-        sage: sorted(list(directed_edges_iter(graphs.WheelGraph(3))))
-        [(0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1)]
-    """
-    for (u, v, label) in g.edge_iterator():
-        yield (u, v)
-        yield (v, u)
-
-# --------------- #
-# Dynamic Program #
-# --------------- #
+load('graphs_util.py')
 
 class LeafMapDynamicProgram(object):
     r"""
