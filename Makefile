@@ -1,6 +1,7 @@
 .PHONY: test
 
 test:
-	sage -t graph_border.py
-	sage -t induced_maximal_tree.py
+	sage -t README.rst
+	sage -t flis_configuration.py
+	sage -t flis_graphs.py
 	sage -t flis_trees.py
