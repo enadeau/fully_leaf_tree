@@ -4,7 +4,7 @@ load('flis_configuration.py')
 load('flis_trees.py')
 
 def leaf_map(graph, algorithm='general', upper_bound_strategy='dist'):
-    """
+    r"""
     Compute the leaf function of ``graph``.
 
     Given a simple graph `G = (V,E)` and `T` a subset of `V`, we say that T is
@@ -22,7 +22,7 @@ def leaf_map(graph, algorithm='general', upper_bound_strategy='dist'):
 
     INPUT:
 
-    - ``G``: A simple graph
+    - ``graph``: A simple graph
     - ``algorithm``: The algorithm used to compute the leaf map. Currently,
       there are three options:
 
