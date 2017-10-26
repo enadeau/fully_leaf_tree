@@ -2,6 +2,7 @@ from datetime import datetime
 import warnings
 load('flis_configuration.py')
 load('flis_trees.py')
+load('graphs_util.py')
 
 def leaf_map(graph, algorithm='general', upper_bound_strategy='dist'):
     r"""
@@ -103,8 +104,8 @@ def leaf_map(graph, algorithm='general', upper_bound_strategy='dist'):
         program = LeafMapDynamicProgram(graph)
         return program.leaf_map_with_example()
     elif algorithm == 'cube':
+        assert is_hypercube(graph), 'graph is not a hypercube'
         d = graph.num_verts().bit_length() - 1
-        assert graph.num_verts() == 2 ** d
         return _cube_graph_leaf_map(d)
 
 def _cube_graph_leaf_map(d, upper_bound_strategy='dist', save_progress=False):

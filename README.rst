@@ -69,16 +69,8 @@ three Python files loaded::
 Below are additional examples with pictures. A ternary tree::
 
     sage: load('flis_graphs.py')
-    sage: from itertools import product
     sage: B = graphs.BalancedTree(3, 2)
     sage: (L,E) = leaf_map(B, algorithm='tree')
-    sage: def plot_subgraph(graph, subgraph):
-    ....:     vertex_colors = {}
-    ....:     vertex_colors['white'] = set(graph) - set(subgraph)
-    ....:     vertex_colors['green'] = subgraph
-    ....:     edge_colors = {}
-    ....:     edge_colors['green'] = [(u,v) for (u, v) in product(subgraph, subgraph) if graph.has_edge(u, v)]
-    ....:     return graph.plot(vertex_colors=vertex_colors)
     sage: G = graphics_array([plot_subgraph(B, E[i][0]) for i in range(14)], 2, 7)
     sage: G.show(figsize=[14,4])
 
@@ -90,13 +82,6 @@ And the Petersen graph::
     sage: from itertools import product
     sage: P = graphs.PetersenGraph()
     sage: (L,E) = leaf_map(P, algorithm='general')
-    sage: def plot_subgraph(graph, subgraph):
-    ....:     vertex_colors = {}
-    ....:     vertex_colors['white'] = set(graph) - set(subgraph)
-    ....:     vertex_colors['green'] = subgraph
-    ....:     edge_colors = {}
-    ....:     edge_colors['green'] = [(u,v) for (u, v) in product(subgraph, subgraph) if graph.has_edge(u, v)]
-    ....:     return graph.plot(vertex_colors=vertex_colors)
     sage: G = graphics_array([plot_subgraph(P, E[i][0]) for i in range(8)], 2, 4)
     sage: G.show(figsize=[14,7])
 
