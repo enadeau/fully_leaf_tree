@@ -1,3 +1,5 @@
+from itertools import product
+
 def directed_edges_iter(graph):
     r"""
     Returns a generator over all directions of the edge of `graph`.
@@ -98,3 +100,31 @@ def is_hypercube(graph):
                 vertex_to_int[u] = ui
         return all(is_power_of_two(abs(vertex_to_int[u] - vertex_to_int[v]))\
                    for (u,v) in graph.edge_iterator(labels=False))
+
+
+def plot_subgraph(graph, subgraph, **kwargs):
+    r"""
+    Plot the subgraph induced on graph by vertices in subgraph. The subgraph
+    vertices and edges are outline in green.
+
+    This function accepts any parameter accepted by Graph.plot
+
+    INPUT:
+
+    - ``graph``: a graph
+    - ``subgraph``: iterable containers of vertices of ```graph``
+
+    EXAMPLE::
+
+        sage: plot_subgraph(graphs.PetersenGraph(), [1, 2, 3, 4])
+        Graphics object consisting of 26 graphics primitives
+    """
+    vertex_colors = {}
+    vertex_colors['white'] = set(graph) - set(subgraph)
+    vertex_colors['green'] = subgraph
+    edge_colors = {}
+    edge_colors['green'] = [(u,v) for (u, v) in product(subgraph, subgraph) if \
+            graph.has_edge(u, v)]
+    kwargs['edge_colors'] = edge_colors
+    kwargs['vertex_colors'] = vertex_colors
+    return graph.plot(**kwargs)
