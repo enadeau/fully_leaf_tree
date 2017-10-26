@@ -1,10 +1,10 @@
 Fully leafed induced subtrees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This respository contains code for computing the leaf function of a graph. It
-was used to compute some values presented in an an article titled *Fully leafed
-induced subtrees*, that will be submitted to Discrete Mathematics & Theoretical
-Computer Science.
+This respository contains code for computing the leaf function of a graph. The
+main algorithms used are described and analyzed in an article titled *Fully
+leafed induced subtrees* (https://arxiv.org/abs/1709.09808). It was also used
+to compute the leaf function of classical graphs.
 
 Background
 ==========
@@ -30,7 +30,10 @@ hypercube graph of dimension 6.
 Dependencies
 ============
 
-- `Sagemath <http://www.sagemath.org>`__.
+Currently, one must have `Sagemath <http://www.sagemath.org>`__ installed to
+run the program. It is mostly used to have quick access to classical graphs. In
+the future, we intend intend to remove the dependency and port the program to C
+or C++.
 
 How to use
 ==========
@@ -74,8 +77,8 @@ Below are additional examples with pictures. A ternary tree::
     ....:     vertex_colors['white'] = set(graph) - set(subgraph)
     ....:     vertex_colors['green'] = subgraph
     ....:     edge_colors = {}
-    ....:     edge_colors['green'] = [(u,v) for (u, v) in product(subgraph, subgraph) if u in graph.neighbors(v)]
-    ....:     return graph.plot(vertex_colors=vertex_colors, figsize=(3,3))
+    ....:     edge_colors['green'] = [(u,v) for (u, v) in product(subgraph, subgraph) if graph.has_edge(u, v)]
+    ....:     return graph.plot(vertex_colors=vertex_colors)
     sage: G = graphics_array([plot_subgraph(B, E[i][0]) for i in range(14)], 2, 7)
     sage: G.show(figsize=[14,4])
 
@@ -92,8 +95,8 @@ And the Petersen graph::
     ....:     vertex_colors['white'] = set(graph) - set(subgraph)
     ....:     vertex_colors['green'] = subgraph
     ....:     edge_colors = {}
-    ....:     edge_colors['green'] = [(u,v) for (u, v) in product(subgraph, subgraph) if u in graph.neighbors(v)]
-    ....:     return graph.plot(vertex_colors=vertex_colors, figsize=(3,3))
+    ....:     edge_colors['green'] = [(u,v) for (u, v) in product(subgraph, subgraph) if graph.has_edge(u, v)]
+    ....:     return graph.plot(vertex_colors=vertex_colors)
     sage: G = graphics_array([plot_subgraph(P, E[i][0]) for i in range(8)], 2, 4)
     sage: G.show(figsize=[14,7])
 
