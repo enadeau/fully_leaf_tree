@@ -104,15 +104,15 @@ def is_hypercube(graph):
 
 def plot_subgraph(graph, subgraph, **kwargs):
     r"""
-    Plot the subgraph induced on graph by vertices in subgraph. The subgraph
-    vertices and edges are outline in green.
+    Plots the subgraph induced on graph by vertices in subgraph.
 
-    This function accepts any parameter accepted by Graph.plot
+    The subgraph vertices and edges are outlined in green. Any additional
+    arguments are passed to the ``plot`` function of ``Graph``.
 
     INPUT:
 
-    - ``graph``: a graph
-    - ``subgraph``: iterable containers of vertices of ```graph``
+    - ``graph``: A graph
+    - ``subgraph``: An iterable on vertices of ```graph``
 
     EXAMPLE::
 
@@ -123,7 +123,7 @@ def plot_subgraph(graph, subgraph, **kwargs):
     vertex_colors['white'] = set(graph) - set(subgraph)
     vertex_colors['green'] = subgraph
     edge_colors = {}
-    edge_colors['green'] = [(u,v) for (u, v) in product(subgraph, subgraph) if \
+    edge_colors['green'] = [(u, v) for (u, v) in product(subgraph, subgraph) if \
             graph.has_edge(u, v)]
     kwargs['edge_colors'] = edge_colors
     kwargs['vertex_colors'] = vertex_colors
