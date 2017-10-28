@@ -6,7 +6,7 @@ load('graphs_util.py')
 
 class flis_solver(object):
     r"""
-    An program to compute the leaf map for graph.
+    A program to compute the leaf map and fully leafed trees for graph.
 
     Given a simple graph `G = (V,E)` and `T` a subset of `V`, we say that T is
     a fully leafed induced subtree of size `i` if the following conditions are
@@ -61,8 +61,9 @@ class flis_solver(object):
     """
 
     def __init__(self, graph, algorithm='general', upper_bound_strategy='dist'):
-        assert upper_bound_strategy in ['naive', 'dist']
-        assert algorithm in ['general', 'cube', 'tree']
+        assert upper_bound_strategy in ['naive', 'dist'], ('Invalid'
+                ' upper_bound_strategy')
+        assert algorithm in ['general', 'cube', 'tree'], 'algorithm invalid'
         if algorithm == 'tree':
             assert graph.is_tree(), 'graph is not a tree'
         elif algorithm == 'cube':
@@ -108,6 +109,9 @@ class flis_solver(object):
 
         If ``i == None ``: A dictionnary of list of examples of fully leafed
         trees for each size.
+
+        If i an interger:  A list of examples of fully leafed trees of size
+        ``i``.
         """
         assert i in  range(self.n+1) or i == None, 'i invalid'
         if not self.flt:
@@ -122,7 +126,8 @@ class flis_solver(object):
         r"""
         Leaf map and examples computations with general algorithm.
         """
-        self.configuration = Configuration(self.graph, self.upper_bound_strategy)
+        self.configuration = Configuration(self.graph,
+                self.upper_bound_strategy)
         self._explore_configuration()
 
     def _leaf_map_hypercube(self, d, save_progress = False):
@@ -190,8 +195,8 @@ class flis_solver(object):
                 if (i, d) == (5, 3):
                     self.flt[5] = [['000', '100', '110', '111', '011']]
                 else:
-                    warnings.warn(("Warning: This program cannot return an example"
-                            " of fully leafed tree of size %s" % i))
+                    warnings.warn(("Warning: This program cannot return an"
+                            " example of fully leafed tree of size %s" % i))
 
     def _leaf_map_tree(self):
         r"""
@@ -202,7 +207,7 @@ class flis_solver(object):
         self.lf = L
         self.flt = E
 
-    def _explore_configuration(self, max_deg=float('inf')):
+    def _explore_configuration(self, max_deg=Infinity):
         r"""
         Explores all the possible subtrees  with maximum degree ``max_deg`` of
         ``self.graph`` and updates ``self.lf`` and
