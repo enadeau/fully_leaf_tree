@@ -4,7 +4,7 @@ load('flis_configuration.py')
 load('flis_trees.py')
 load('graphs_util.py')
 
-class flis_solver(object):
+class FLISSolver(object):
     r"""
     A program to compute the leaf map and fully leafed trees for graph.
 
@@ -42,22 +42,24 @@ class flis_solver(object):
 
     EXAMPLE::
 
-        sage: flis_solver(graphs.CompleteGraph(7)).leaf_map()
+        sage: FLISSolver(graphs.CompleteGraph(7)).leaf_map()
         {0: 0, 1: 0, 2: 2, 3: None, 4: None, 5: None, 6: None, 7: None}
-        sage: flis_solver(graphs.CycleGraph(10)).leaf_map()
+        sage: FLISSolver(graphs.CycleGraph(10)).leaf_map()
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: None}
-        sage: flis_solver(graphs.WheelGraph(11)).leaf_map()
+        sage: FLISSolver(graphs.WheelGraph(11)).leaf_map()
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 2, 8: 2, 9: 2, 10: None, 11: None}
-        sage: flis_solver(graphs.CompleteBipartiteGraph(7,5)).leaf_map()
+        sage: FLISSolver(graphs.CompleteBipartiteGraph(7,5)).leaf_map()
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: None, 10: None, 11: None, 12: None}
-        sage: flis_solver(graphs.PetersenGraph()).leaf_map()
+        sage: FLISSolver(graphs.PetersenGraph()).leaf_map()
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: None, 9: None, 10: None}
-        sage: flis_solver(graphs.CubeGraph(3), algorithm='cube').leaf_map()
+        sage: FLISSolver(graphs.CubeGraph(3), algorithm='cube').leaf_map()
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
-        sage: flis_solver(graphs.BalancedTree(2, 2), algorithm='tree').leaf_map()
+        sage: FLISSolver(graphs.BalancedTree(2, 2), algorithm='tree').leaf_map()
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
-        sage: flis_solver(graphs.CubeGraph(4), algorithm='cube').leaf_map().values()
+        sage: FLISSolver(graphs.CubeGraph(4), algorithm='cube').leaf_map().values()
         [0, 0, 2, 2, 3, 4, 3, 4, 3, 4, None, None, None, None, None, None, None]
+        sage: sorted(FLISSolver(graphs.PetersenGraph()).fully_leafed_subtrees(7)[0])
+        [0, 1, 2, 3, 5, 6, 9]
     """
 
     def __init__(self, graph, algorithm='general', upper_bound_strategy='dist'):

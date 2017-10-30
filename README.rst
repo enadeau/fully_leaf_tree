@@ -38,7 +38,7 @@ or C++.
 How to use
 ==========
 
-The main function is ``flis_solver(G)``. This function compute the leaf function
+The main class is ``FLISSolver(G)``. This class compute the leaf function
 of a general graph ``G``. Special optimization can be used for particular cases
 using the optional parameter ``algorithm``. The available options are:
 
@@ -47,30 +47,33 @@ using the optional parameter ``algorithm``. The available options are:
 - ``'cube'``: A specialized branch and bound algorithm exploiting the
   symmetries of the hypercubes.
 
+This class can also compute examples of fully leafed tree with
+``FLISSolver(G).fully_leafed_subtrees(i)`` for subtrees of size ``i``.
+
 Below are some examples that can be reproduced once Sagemath is started and the
 three Python files loaded::
 
     sage: load('flis_graphs.py')
-    sage: flis_solver(graphs.CompleteGraph(7)).leaf_map()
+    sage: FLISSolver(graphs.CompleteGraph(7)).leaf_map()
     {0: 0, 1: 0, 2: 2, 3: None, 4: None, 5: None, 6: None, 7: None}
-    sage: flis_solver(graphs.CycleGraph(10)).leaf_map()
+    sage: FLISSolver(graphs.CycleGraph(10)).leaf_map()
     {0: 0, 1: 0, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: None}
-    sage: flis_solver(graphs.WheelGraph(11)).leaf_map()
+    sage: FLISSolver(graphs.WheelGraph(11)).leaf_map()
     {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 2, 8: 2, 9: 2, 10: None, 11: None}
-    sage: flis_solver(graphs.CompleteBipartiteGraph(7,5)).leaf_map()
+    sage: FLISSolver(graphs.CompleteBipartiteGraph(7,5)).leaf_map()
     {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: None, 10: None, 11: None, 12: None}
-    sage: flis_solver(graphs.PetersenGraph()).leaf_map()
+    sage: FLISSolver(graphs.PetersenGraph()).leaf_map()
     {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: None, 9: None, 10: None}
-    sage: flis_solver(graphs.CubeGraph(3), algorithm='cube').leaf_map()
+    sage: FLISSolver(graphs.CubeGraph(3), algorithm='cube').leaf_map()
     {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
-    sage: flis_solver(graphs.BalancedTree(2, 2), algorithm='tree').leaf_map()
+    sage: FLISSolver(graphs.BalancedTree(2, 2), algorithm='tree').leaf_map()
     {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
 
 Below are additional examples with pictures. A ternary tree::
 
     sage: load('flis_graphs.py')
     sage: B = graphs.BalancedTree(3, 2)
-    sage: S = flis_solver(B, algorithm='tree')
+    sage: S = FLISSolver(B, algorithm='tree')
     sage: G = graphics_array([plot_subgraph(B, S.fully_leafed_subtrees(i)[0]) for i in range(14)], 2, 7)
     sage: G.show(figsize=[14,4])
 
@@ -80,7 +83,7 @@ And the Petersen graph::
 
     sage: load('flis_graphs.py')
     sage: P = graphs.PetersenGraph()
-    sage: S = flis_solver(P, algorithm='general')
+    sage: S = FLISSolver(P, algorithm='general')
     sage: G = graphics_array([plot_subgraph(P, S.fully_leafed_subtrees(i)[0]) for i in range(8)], 2, 4)
     sage: G.show(figsize=[14,7])
 
