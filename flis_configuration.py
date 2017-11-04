@@ -1,4 +1,5 @@
 from collections import deque
+import itertools
 import heapq
 
 class Configuration(object):
@@ -119,6 +120,44 @@ class Configuration(object):
                 if status == Configuration.BORDER:
                     return v
         return None
+
+    def non_isometric_extension(self):
+        r"""
+        Compute all non isometric possible extension of self
+
+        EXAMPLE::
+
+            sage: C = Configuration(graphs.CubeGraph(3))
+            sage: len(C.non_isometric_extension())
+            1
+            sage: C.include_vertex('000')
+            0
+            sage: len(C.non_isometric_extension())
+            1
+            sage: C.include_vertex('001')
+            1
+            sage: C.include_vertex('010')
+            2
+            sage: len(C.non_isometric_extension())
+            2
+
+        TODO: The proof and details of doc
+        """
+        S = self.graph.automorphism_group().stabilizer(self.subtree_vertices,
+                action='OnSets')
+        G = Graph(loops=True)
+        G.add_vertices(self.graph.vertex_iterator())
+        for (v, f) in itertools.product(G, S.gens_small()):
+            G.add_edge(v, f(v))
+        extensions = []
+        for c in G.connected_components():
+            if self.subtree_size == 0:
+                l = [u for u in c if self.vertex_status[u][0] == Configuration.NOT_SEEN]
+            else:
+                l = [u for u in c if self.vertex_status[u][0] == Configuration.BORDER]
+            if len(l)>0:
+                extensions.append(l[0])
+        return extensions
 
     def include_vertex(self, v):
         r"""
