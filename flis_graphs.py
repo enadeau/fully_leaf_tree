@@ -234,6 +234,9 @@ class FLISSolver(object):
             if degree <= max_deg:
                 self._explore_configuration(max_deg)
             C.undo_last_operation()
-            C.exclude_vertex(next_vertex)
+            isom_ext = C.isometric_extension(next_vertex)
+            for v in isom_ext:
+                C.exclude_vertex(v)
             self._explore_configuration(max_deg)
-            C.undo_last_operation()
+            for v in isom_ext:
+                C.undo_last_operation()
