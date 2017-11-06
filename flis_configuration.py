@@ -121,6 +121,55 @@ class Configuration(object):
                     return v
         return None
 
+    def isometric_extension(self, v):
+        r"""
+        Compute all vertices that creates isometric extension then the extension by v
+
+        INPUT:
+
+        ``v``: A vertex that can extend de configuration
+
+
+        OUTPUT:
+
+        All vertices that will extend the configuration in an isometric ways then by v
+
+        EXAMPLE::
+
+            sage: C = Configuration(graphs.CubeGraph(3))
+            sage: sorted(C.isometric_extension('000'))
+            ['000', '001', '010', '011', '100', '101', '110', '111']
+            sage: C.include_vertex('000')
+            0
+            sage: sorted(C.isometric_extension('001'))
+            ['001', '010', '100']
+            sage: C.include_vertex('001')
+            1
+            sage: C.include_vertex('010')
+            2
+            sage: sorted(C.isometric_extension('100'))
+            ['100']
+            sage: sorted(C.isometric_extension('110'))
+            ['101', '110']
+        """
+        assert self.vertex_status[v][0] == Configuration.BORDER or \
+                (self.subtree_size == 0 and self.vertex_status[v][0] == Configuration.NOT_SEEN)
+        S = self.graph.automorphism_group().stabilizer(self.subtree_vertices,
+                action='OnSets')
+        aut_gens = S.gens_small()
+        status = self.vertex_status[v][0]
+        extensions = set()
+        Q = deque([v])
+        while Q:
+            v = Q.popleft()
+            if v not in extensions:
+                extensions.add(v)
+                for f in aut_gens:
+                    u = f(v)
+                    if u not in extensions:
+                        Q.append(u)
+        return list(v for v in extensions if self.vertex_status[v][0] == status)
+
     def non_isometric_extension(self):
         r"""
         Compute all non isometric possible extension of self
