@@ -38,17 +38,19 @@ or C++.
 How to use
 ==========
 
-The main class is ``FLISSolver(G)``. This class compute the leaf function
-of a general graph ``G``. Special optimization can be used for particular cases
-using the optional parameter ``algorithm``. The available options are:
+The main class is ``FLISSolver(G)``. An instance of this class can be used to
+compute the leaf function of a general graph ``G``. Specializations can be used
+for particular cases using the optional parameter ``algorithm``. The available
+options are:
 
 - ``'general'``: The branch and bound algorithm for general graphs;
 - ``'tree'``: A polynomial time algorithm based on dynamic programming;
 - ``'cube'``: A specialized branch and bound algorithm exploiting the
   symmetries of the hypercubes.
 
-This class can also compute examples of fully leafed tree with
-``FLISSolver(G).fully_leafed_subtrees(i)`` for subtrees of size ``i``.
+It is also possible to obtain particular examples, whenever they exist, of
+fully leafed tree by calling the function ``fully_leafed_induced_subtrees(i)``
+where ``i`` is the size of the desired subtree.
 
 Below are some examples that can be reproduced once Sagemath is started and the
 three Python files loaded::
@@ -74,7 +76,7 @@ Below are additional examples with pictures. A ternary tree::
     sage: load('flis_graphs.py')
     sage: B = graphs.BalancedTree(3, 2)
     sage: S = FLISSolver(B, algorithm='tree')
-    sage: G = graphics_array([plot_subgraph(B, S.fully_leafed_subtrees(i)[0]) for i in range(14)], 2, 7)
+    sage: G = graphics_array([plot_subgraph(B, S.fully_leafed_induced_subtrees(i)[0]) for i in range(14)], 2, 7)
     sage: G.show(figsize=[14,4])
 
 .. image:: images/flis-balanced-tree.png
@@ -84,7 +86,7 @@ And the Petersen graph::
     sage: load('flis_graphs.py')
     sage: P = graphs.PetersenGraph()
     sage: S = FLISSolver(P, algorithm='general')
-    sage: G = graphics_array([plot_subgraph(P, S.fully_leafed_subtrees(i)[0]) for i in range(8)], 2, 4)
+    sage: G = graphics_array([plot_subgraph(P, S.fully_leafed_induced_subtrees(i)[0]) for i in range(8)], 2, 4)
     sage: G.show(figsize=[14,7])
 
 .. image:: images/flis-petersen.png

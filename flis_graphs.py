@@ -58,7 +58,7 @@ class FLISSolver(object):
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
         sage: FLISSolver(graphs.CubeGraph(4), algorithm='cube').leaf_map().values()
         [0, 0, 2, 2, 3, 4, 3, 4, 3, 4, None, None, None, None, None, None, None]
-        sage: sorted(FLISSolver(graphs.PetersenGraph()).fully_leafed_subtrees(7)[0])
+        sage: sorted(FLISSolver(graphs.PetersenGraph()).fully_leafed_induced_subtrees(7)[0])
         [0, 1, 2, 3, 5, 6, 9]
     """
 
@@ -101,9 +101,10 @@ class FLISSolver(object):
         return self.lf
 
 
-    def fully_leafed_subtrees(self, i=None):
+    def fully_leafed_induced_subtrees(self, i=None):
         r"""
-        Returns some fully leafed trees of ``self.graph`` of size ``i``.
+        Returns some fully leafed induced trees of ``self.graph`` of size
+        ``i``.
 
         If ``i == None``, returns a dictionnary of examples for each size.
 
@@ -211,10 +212,10 @@ class FLISSolver(object):
 
     def _explore_configuration(self, max_deg=Infinity):
         r"""
-        Explores all the possible subtrees  with maximum degree ``max_deg`` of
-        ``self.graph`` and updates ``self.lf`` and
-        ``self.flt``  to keep track subtrees with the maximum
-        number of leaves.
+        Explores all the possible induced subtrees with maximum degree
+        ``max_deg`` of ``self.graph`` and updates ``self.lf`` and ``self.flt``
+        to keep track of the induced subtrees with the maximum number of
+        leaves.
         """
         C = self.configuration
         m = C.subtree_size
