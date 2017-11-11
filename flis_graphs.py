@@ -4,9 +4,9 @@ load('flis_configuration.py')
 load('flis_trees.py')
 load('graphs_util.py')
 
-def leaf_map(graph, algorithm='general', upper_bound_strategy='dist'):
+class FLISSolver(object):
     r"""
-    Compute the leaf function of ``graph``.
+    A program to compute the leaf map and fully leafed trees for graph.
 
     Given a simple graph `G = (V,E)` and `T` a subset of `V`, we say that T is
     a fully leafed induced subtree of size `i` if the following conditions are
@@ -40,186 +40,200 @@ def leaf_map(graph, algorithm='general', upper_bound_strategy='dist'):
       * ``'dist'``: The bound takes into account what vertices could
         potentially be added in the extension according to their distance.
 
-    OUTPUT:
+    EXAMPLE::
 
-    A pair ``(L, E)`` where ``L`` is a dictionnary representing the leaf
-    function and ``E`` a dictionnary of list of examples of fully leafed trees
-    for each size.  If ``L[i] == None`` no induced of size ``i`` exists in
-    ``G``.
-
-    EXAMPLE:
-
-        sage: leaf_map(graphs.CompleteGraph(7))[0]
+        sage: FLISSolver(graphs.CompleteGraph(7)).leaf_map()
         {0: 0, 1: 0, 2: 2, 3: None, 4: None, 5: None, 6: None, 7: None}
-        sage: leaf_map(graphs.CycleGraph(10))[0]
+        sage: FLISSolver(graphs.CycleGraph(10)).leaf_map()
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: None}
-        sage: leaf_map(graphs.WheelGraph(11))[0]
+        sage: FLISSolver(graphs.WheelGraph(11)).leaf_map()
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 2, 8: 2, 9: 2, 10: None, 11: None}
-        sage: leaf_map(graphs.CompleteBipartiteGraph(7,5))[0]
+        sage: FLISSolver(graphs.CompleteBipartiteGraph(7,5)).leaf_map()
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: None, 10: None, 11: None, 12: None}
-        sage: leaf_map(graphs.PetersenGraph())[0]
+        sage: FLISSolver(graphs.PetersenGraph()).leaf_map()
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 3, 8: None, 9: None, 10: None}
-        sage: leaf_map(graphs.CubeGraph(3), algorithm='cube')[0]
+        sage: FLISSolver(graphs.CubeGraph(3), algorithm='cube').leaf_map()
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
-        sage: leaf_map(graphs.BalancedTree(2, 2), algorithm='tree')[0]
+        sage: FLISSolver(graphs.BalancedTree(2, 2), algorithm='tree').leaf_map()
         {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 4}
-    """
-    def explore_configuration():
-        r"""
-        Explore all interesting subtrees of ``graph`` and update the dictionnary
-        ``L`` to keep track of the maximum.
-        """
-        m = B.subtree_size
-        l = B.subtree_num_leaf()
-        promising = sum([L[i] < B.leaf_potential(i) for i in range(m,
-            n + 1 - B.num_excluded)]) > 0
-        next_vertex = B.vertex_to_add()
-        if next_vertex == None:
-            if L[m] == l:
-                max_leafed_tree[m].append(copy(B.subtree_vertices))
-            elif L[m] < l:
-                max_leafed_tree[m] = [copy(B.subtree_vertices)]
-                L[m] = l
-        elif promising:
-            B.include_vertex(next_vertex)
-            explore_configuration()
-            B.undo_last_operation()
-            B.exclude_vertex(next_vertex)
-            explore_configuration()
-            B.undo_last_operation()
-
-    assert upper_bound_strategy in ['naive', 'dist']
-    assert algorithm in ['general', 'cube', 'tree']
-    if algorithm == 'general':
-        n = graph.num_verts()
-        L = dict([(i, None) for i in range(0, n + 1)])
-        max_leafed_tree = dict([(i, []) for i in range(n + 1)])
-        L[0] = 0
-        max_leafed_tree[0] = [[]]
-        B = Configuration(graph, upper_bound_strategy)
-        explore_configuration()
-        return L, max_leafed_tree
-    elif algorithm == 'tree':
-        assert graph.is_tree(), "graph is not a tree"
-        program = LeafMapDynamicProgram(graph)
-        return program.leaf_map_with_example()
-    elif algorithm == 'cube':
-        assert is_hypercube(graph), 'graph is not a hypercube'
-        d = graph.num_verts().bit_length() - 1
-        return _cube_graph_leaf_map(d)
-
-def _cube_graph_leaf_map(d, upper_bound_strategy='dist', save_progress=False):
-    r"""
-    Computes the leaf function for the cube graph of dimension ``d``.
-
-    See `leaf_map` for more details.
-
-    INPUT:
-
-    - ``d``: Dimension of the hypercube;
-    - ``upper_bound_strategy``: The strategy for the upper bound (either
-      'dist' or 'naive');
-    - ``save_progress``: Indicates whether to save partial solutions,
-      especially for long computations.
-
-    OUTPUT:
-
-    A pair ``(L, E)`` where ``L`` is a dictionnary representing the leaf
-    function and ``E`` a dictionnary of list of examples of fully leafed trees
-    for each size.  If ``L[i] == None`` no induced of size ``i`` exists in
-    ``graph``.
-
-    ALGORITHM:
-
-    Uses symmetries of the hypercube to avoid exploring many times isometric
-    configurations.
-
-    EXAMPLE:
-
-        sage: _cube_graph_leaf_map(3)[0]
-        {0: 0, 1: 0, 2: 2, 3: 2, 4: 3, 5: 2, 6: None, 7: None, 8: None}
-        sage: list(_cube_graph_leaf_map(4)[0].values())
+        sage: FLISSolver(graphs.CubeGraph(4), algorithm='cube').leaf_map().values()
         [0, 0, 2, 2, 3, 4, 3, 4, 3, 4, None, None, None, None, None, None, None]
+        sage: sorted(FLISSolver(graphs.PetersenGraph()).fully_leafed_induced_subtrees(7)[0])
+        [0, 1, 2, 3, 5, 6, 9]
     """
-    def explore_configuration(max_deg):
+
+    def __init__(self, graph, algorithm='general', upper_bound_strategy='dist'):
+        assert upper_bound_strategy in ['naive', 'dist'], ('Invalid'
+                ' upper_bound_strategy')
+        assert algorithm in ['general', 'cube', 'tree'], 'algorithm invalid'
+        if algorithm == 'tree':
+            assert graph.is_tree(), 'graph is not a tree'
+        elif algorithm == 'cube':
+            assert is_hypercube(graph), 'graph is not a hypercube'
+        self.graph = graph
+        self.n = self.graph.num_verts()
+        self.algorithm = algorithm
+        self.upper_bound_strategy = upper_bound_strategy
+        self.lf = {}
+        self.flt = {}
+
+    def leaf_map(self):
         r"""
-        Explores all the possible subtrees with maximum degree ``max_deg`` of
-        ``graph`` and updates the dictionnary ``L`` to keep track of the
-        maximum.
+        Returns the leaf map of ``self.graph``.
+
+        OUTPUT:
+
+        A dictionnary ``L`` representing the leaf map. If ``L[i] == None`` no
+        induced of size ``i`` exists in ``G``.
         """
-        m = B.subtree_size
-        l = B.subtree_num_leaf()
-        promising = sum([L[i] < B.leaf_potential(i) for i in range(m,
-            n + 1 - B.num_excluded)]) > 0
-        next_vertex = B.vertex_to_add()
+        if not self.lf:
+            self.lf = dict([(i, None) for i in range(0, self.n + 1)])
+            self.flt = dict([(i, []) for i in range(self.n + 1)])
+            self.lf[0] = 0
+            self.flt[0] = [[]]
+            if self.algorithm == 'tree':
+                self._leaf_map_tree()
+            elif self.algorithm == 'cube':
+                d = self.n.bit_length() - 1
+                self._leaf_map_hypercube(d)
+            else:
+                self._leaf_map_general()
+        return self.lf
+
+
+    def fully_leafed_induced_subtrees(self, i=None):
+        r"""
+        Returns some fully leafed induced trees of ``self.graph`` of size
+        ``i``.
+
+        If ``i == None``, returns a dictionnary of examples for each size.
+
+        OUTPUT:
+
+        If ``i == None ``: A dictionnary of list of examples of fully leafed
+        trees for each size.
+
+        If i an interger:  A list of examples of fully leafed trees of size
+        ``i``.
+        """
+        assert i in  range(self.n+1) or i == None, 'i invalid'
+        if not self.flt:
+            self.leaf_map()
+        if i == None:
+            return self.flt
+        else:
+            return self.flt[i]
+
+
+    def _leaf_map_general(self):
+        r"""
+        Leaf map and examples computations with general algorithm.
+        """
+        self.configuration = Configuration(self.graph,
+                self.upper_bound_strategy)
+        self._explore_configuration()
+
+    def _leaf_map_hypercube(self, d, save_progress = False):
+        r"""
+        Leaf map and examples computations with hypercube algorithm.
+
+        INPUT:
+
+        - ``d``: Dimension of the hypercube;
+        - ``save_progress``: Indicates whether to save partial solutions,
+          especially for long computations.
+
+        ALGORITHM:
+
+        Uses symmetries of the hypercube to avoid exploring many times isometric
+        configurations.
+        """
+        # Number of vertices in the biggest induced snake in cube
+        # See http://ai1.ai.uga.edu/sib/sibwiki/doku.php/records
+        snake_in_the_box = {1: 2, 2: 3, 3: 5, 4: 8, 5: 14, 6: 27, 7: 51, 8: 99}
+        base_vertex = '0' * d
+        star_vertices = ['0' * i + '1' + '0' * (d - i - 1) for i in range(d)]
+        extension_vertex = '1' + '0' * (d - 2) + '1'
+        graph = graphs.CubeGraph(d)
+        # Initialization for small value
+        self.lf[1] = 0
+        self.flt[1].append([base_vertex])
+        self.lf[2] = 2
+        self.flt[2].append([base_vertex, star_vertices[0]])
+        for i in range(3, d + 2):
+            self.lf[i] = i - 1
+            self.flt[i].append([base_vertex]+star_vertices[:i - 1])
+        # Initialization according to snake-in-the-box
+        if d <= 8:
+            for i in range(2, snake_in_the_box[d] + 1):
+                self.lf[i] = max(2, self.lf[i])
+        else:
+            raise ValueError, ("dimension of hypercue is too big, "
+                "no chance of sucess")
+        # Main computations
+        for i in range(d - 1, 2, -1):
+            # Initialization of a starting configuration with a i-pode
+            self.configuration = Configuration(self.graph,
+                    self.upper_bound_strategy, i)
+            self.configuration.include_vertex(base_vertex)
+            for j in range(d):
+                if j < i:
+                    self.configuration.include_vertex(star_vertices[j])
+                else:
+                    self.configuration.exclude_vertex(star_vertices[j])
+            self.configuration.include_vertex(extension_vertex)
+            self._explore_configuration(max_deg=i)
+            if save_progress:
+                print "Exploration for %s-pode complete at %s" %\
+                        (i, str(datetime.now()))
+                name = "L-dict-after-" + str(i) + "-pode.sobj"
+                save(self.lf, name)
+                print "%s saved" %name
+                name = "Max-leafed-tree-after" + str(i) + "-pode.sobj"
+                save(self.flt, name)
+                print "%s saved" %name
+        # Add examples if fully leafed tree are snakes
+        for i in range(d + 1, self.n + 1):
+            if self.lf[i] == 2 and i not in [2, 3]:
+                if (i, d) == (5, 3):
+                    self.flt[5] = [['000', '100', '110', '111', '011']]
+                else:
+                    warnings.warn(("Warning: This program cannot return an"
+                            " example of fully leafed tree of size %s" % i))
+
+    def _leaf_map_tree(self):
+        r"""
+        Leaf map  and examples computation with tree algorithm.
+        """
+        program = LeafMapDynamicProgram(self.graph)
+        (L, E) = program.leaf_map_with_example()
+        self.lf = L
+        self.flt = E
+
+    def _explore_configuration(self, max_deg=Infinity):
+        r"""
+        Explores all the possible induced subtrees with maximum degree
+        ``max_deg`` of ``self.graph`` and updates ``self.lf`` and ``self.flt``
+        to keep track of the induced subtrees with the maximum number of
+        leaves.
+        """
+        C = self.configuration
+        m = C.subtree_size
+        l = C.subtree_num_leaf()
+        promising = any(self.lf[i] < C.leaf_potential(i) for i in range(m,
+            self.n + 1 - C.num_excluded))
+        next_vertex = C.vertex_to_add()
         if next_vertex == None:
-            if L[m] == l:
-                max_leafed_tree[m].append(copy(B.subtree_vertices))
-            elif L[m] < l:
-                max_leafed_tree[m] = [copy(B.subtree_vertices)]
-                L[m] = l
+            if self.lf[m] == l:
+                self.flt[m].append(copy(C.subtree_vertices))
+            elif self.lf[m] < l:
+                self.flt[m] = [copy(C.subtree_vertices)]
+                self.lf[m] = l
         elif promising:
-            degree = B.include_vertex(next_vertex)
-            if degree <= i:
-                explore_configuration(max_deg)
-            B.undo_last_operation()
-            B.exclude_vertex(next_vertex)
-            explore_configuration(max_deg)
-            B.undo_last_operation()
-    assert upper_bound_strategy in ['naive', 'dist']
-    # Number of vertices in the biggest induced snake in cube
-    # See http://ai1.ai.uga.edu/sib/sibwiki/doku.php/records
-    snake_in_the_box = {1: 2, 2: 3, 3: 5, 4: 8, 5: 14, 6: 27, 7: 51, 8: 99}
-    base_vertex = '0' * d
-    star_vertices = ['0' * i + '1' + '0' * (d - i - 1) for i in range(d)]
-    extension_vertex = '1' + '0' * (d - 2) + '1'
-    graph = graphs.CubeGraph(d)
-    n = graph.num_verts()
-    L = dict([(i, None) for i in range(n + 1)])
-    max_leafed_tree = dict([(i, []) for i in range(n + 1)])
-    # Initialization for small value
-    L[0] = 0
-    max_leafed_tree[0] = [[]]
-    L[1] = 0
-    max_leafed_tree[1].append([base_vertex])
-    L[2] = 2
-    max_leafed_tree[2].append([base_vertex, star_vertices[0]])
-    for i in range(3, d + 2):
-        L[i] = i - 1
-        max_leafed_tree[i].append([base_vertex]+star_vertices[:i - 1])
-    # Initialization according to snake-in-the-box
-    if d <= 8:
-        for i in range(2, snake_in_the_box[d] + 1):
-            L[i] = max(2, L[i])
-    else:
-        raise ValueError, "d is too big, no chance of sucess"
-    # Main computations
-    for i in range(d - 1, 2, -1):
-        # Initialization of a starting configuration with a i-pode
-        B = Configuration(graph, upper_bound_strategy, i)
-        B.include_vertex(base_vertex)
-        for j in range(d):
-            if j < i:
-                B.include_vertex(star_vertices[j])
-            else:
-                B.exclude_vertex(star_vertices[j])
-        B.include_vertex(extension_vertex)
-        explore_configuration(i)
-        if save_progress:
-            print "Exploration for %s-pode complete at %s" %\
-                    (i, str(datetime.now()))
-            name = "L-dict-after-" + str(i) + "-pode.sobj"
-            save(L, name)
-            print "%s saved" %name
-            name = "Max-leafed-tree-after" + str(i) + "-pode.sobj"
-            save(max_leafed_tree, name)
-            print "%s saved" %name
-    # Add examples if fully leafed tree are snakes
-    for i in range(d + 1, n + 1):
-        if L[i] == 2 and i not in [2, 3]:
-            if (i, d) == (5, 3):
-                max_leafed_tree[5] = [['000', '100', '110', '111', '011']]
-            else:
-                warnings.warn(("Warning: This program cannot return an example"
-                        " of fully leafed tree of size %s" % i))
-    return (L, max_leafed_tree)
+            degree = C.include_vertex(next_vertex)
+            if degree <= max_deg:
+                self._explore_configuration(max_deg)
+            C.undo_last_operation()
+            C.exclude_vertex(next_vertex)
+            self._explore_configuration(max_deg)
+            C.undo_last_operation()
