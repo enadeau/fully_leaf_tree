@@ -538,6 +538,30 @@ class Configuration(object):
         kwargs['edge_colors'] = {"green": tree_edge}
         return self.graph.plot(**kwargs)
 
+
+    def _latex_(self, framecolor="black", color="white", fboxsep="5pt", fboxrule="1pt"):
+        return LatexExpr(r"""
+        \setlength{{\fboxsep}}{{{}}}
+        \setlength{{\fboxrule}}{{{}}}
+        \fcolorbox{{{}}}{{{}}}{{\makebox{{${}$}}}}
+        """.format(fboxsep, fboxrule, framecolor, color, self._tkz_picture()))
+
+    def _tkz_picture(self):
+        color = {Configuration.INCLUDED: 'green', Configuration.EXCLUDED: 'red',
+                Configuration.BORDER: 'yellow', Configuration.NOT_SEEN: 'blue'}
+        G = self.graph
+        pos = G.get_pos()
+        left = min(x for (x,y) in pos.values())
+        right = max(x for (x,y) in pos.values())
+        s = r"\begin{tikzpicture}[every node/.style={circle, minimum size=5, inner sep=0}]" + "\n"
+        for node in sorted(pos):
+            s += r"    \node[fill={}] (vertex_{}) at {} {{}};".format(
+                    color[self.vertex_status[node][0]], node, pos[node]) + "\n"
+        for (u, v, l) in G.edges():
+            s += r"    \draw (vertex_{}) to (vertex_{});".format(u, v) + "\n"
+        s += r"\end{tikzpicture}"
+        return LatexExpr(s)
+
     def __repr__(self):
         r"""
         Returns a string representation of self.
