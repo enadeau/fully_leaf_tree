@@ -98,6 +98,18 @@ class Configuration(object):
         self.border_vertex = v
         self.max_degree_allowed_in_subtree = max_degree
 
+    def __copy__(self):
+        out = Configuration(self.graph, self.upper_bound_strategy,
+                self.max_degree_allowed_in_subtree)
+        out.subtree_vertices = deepcopy(self.subtree_vertices)
+        out.subtree_size = self.subtree_size
+        out.num_leaf = self.num_leaf
+        out.num_excluded = self.num_excluded
+        out.border_size = self.border_size
+        out.vertex_status = deepcopy(self.vertex_status)
+        out.history = deepcopy(self.history)
+        return out
+
     def vertex_to_add(self):
         r"""
         Return any vertex of the graph that can included to the current
@@ -494,7 +506,18 @@ class StabilizedConfiguration(Configuration):
                 max_degree=max_degree)
         self.aut_gr = self.graph.automorphism_group()
         self.subtree_stab = self.aut_gr
-        self.manunal_rejection = []
+        self.manual_rejection = []
+
+    def __copy__(self):
+        #TODO Understand why default copy don't work properly
+        out = StabilizedConfiguration(self.graph, upper_bound_strategy=self.upper_bound_strategy,
+                max_degree=self.max_degree_allowed_in_subtree)
+        for v in self.history:
+            if self.vertex_status[v][0] == Configuration.INCLUDED:
+                out.include_vertex(v)
+            else:
+                out.exclude_vertex(v)
+        return out
 
     def include_vertex(self, v):
         degree = super(StabilizedConfiguration, self).include_vertex(v)
@@ -504,7 +527,7 @@ class StabilizedConfiguration(Configuration):
 
     def exclude_vertex(self, v):
         super(StabilizedConfiguration, self).exclude_vertex(v)
-        self.manunal_rejection.append(v)
+        self.manual_rejection.append(v)
 
     def _undo_last_inclusion(self, v):
         super(StabilizedConfiguration, self)._undo_last_inclusion(v)
@@ -513,7 +536,7 @@ class StabilizedConfiguration(Configuration):
 
     def _undo_last_exclusion(self, v):
         super(StabilizedConfiguration, self)._undo_last_exclusion(v)
-        self.manunal_rejection.pop()
+        self.manual_rejection.pop()
 
     def vertex_orbit(self, v):
         r"""
