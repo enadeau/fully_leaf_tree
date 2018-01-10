@@ -4,25 +4,22 @@ class SearchTree(object):
 
     def __init__(self, configuration, method='std'):
         assert method in ['std', 'stab', 'stab2']
+        if method in ['stab', 'stab2']:
+            assert isinstance(configuration, StabilizedConfiguration)
         self.root = configuration
         v = self.root.vertex_to_add()
         if v != None:
             #Inclusion side
-            self.left = deepcopy(configuration)
+            self.left = copy(configuration)
             self.left.include_vertex(v)
             if method == 'stab2':
-                manual_exclude = [u for u in self.left.graph if \
-                        self.left.vertex_status[u] == (self.left.EXCLUDED, u)]
-                A = self.left.graph.automorphism_group()
-                S = A.stabilizer(self.left.subtree_vertices, action='OnSets')
-                #The assert must be commented in isometric_extension
-                for u in manual_exclude:
-                    for w in S.orbit(u):
+                for u in self.left.manual_rejection:
+                    for w in self.left.vertex_orbit(u):
                         if self.left.vertex_status[w][0] == self.left.BORDER:
                             self.left.exclude_vertex(w)
             self.left = SearchTree(self.left, method=method)
             #Exclusion side
-            self.right = deepcopy(configuration)
+            self.right = copy(configuration)
             if method == 'std':
                 self.right.exclude_vertex(v)
             elif method in ['stab', 'stab2']:
