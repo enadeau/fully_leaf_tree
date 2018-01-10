@@ -121,92 +121,6 @@ class Configuration(object):
                     return v
         return None
 
-    def isometric_extension(self, v):
-        r"""
-        Compute all vertices that creates isometric extension then the extension by v
-
-        INPUT:
-
-        ``v``: A vertex that can extend de configuration
-
-
-        OUTPUT:
-
-        All vertices that will extend the configuration in an isometric ways then by v
-
-        EXAMPLE::
-
-            sage: C = Configuration(graphs.CubeGraph(3))
-            sage: sorted(C.isometric_extension('000'))
-            ['000', '001', '010', '011', '100', '101', '110', '111']
-            sage: C.include_vertex('000')
-            0
-            sage: sorted(C.isometric_extension('001'))
-            ['001', '010', '100']
-            sage: C.include_vertex('001')
-            1
-            sage: C.include_vertex('010')
-            2
-            sage: sorted(C.isometric_extension('100'))
-            ['100']
-            sage: sorted(C.isometric_extension('110'))
-            ['101', '110']
-        """
-        assert self.vertex_status[v][0] == Configuration.BORDER or \
-                (self.subtree_size == 0 and self.vertex_status[v][0] == Configuration.NOT_SEEN)
-        S = self.graph.automorphism_group().stabilizer(self.subtree_vertices,
-                action='OnSets')
-        aut_gens = S.gens_small()
-        status = self.vertex_status[v][0]
-        extensions = set()
-        Q = deque([v])
-        while Q:
-            v = Q.popleft()
-            if v not in extensions:
-                extensions.add(v)
-                for f in aut_gens:
-                    u = f(v)
-                    if u not in extensions:
-                        Q.append(u)
-        return list(v for v in extensions if self.vertex_status[v][0] == status)
-
-    def non_isometric_extension(self):
-        r"""
-        Compute all non isometric possible extension of self
-
-        EXAMPLE::
-
-            sage: C = Configuration(graphs.CubeGraph(3))
-            sage: len(C.non_isometric_extension())
-            1
-            sage: C.include_vertex('000')
-            0
-            sage: len(C.non_isometric_extension())
-            1
-            sage: C.include_vertex('001')
-            1
-            sage: C.include_vertex('010')
-            2
-            sage: len(C.non_isometric_extension())
-            2
-
-        TODO: The proof and details of doc
-        """
-        S = self.graph.automorphism_group().stabilizer(self.subtree_vertices,
-                action='OnSets')
-        G = Graph(loops=True)
-        G.add_vertices(self.graph.vertex_iterator())
-        for (v, f) in itertools.product(G, S.gens_small()):
-            G.add_edge(v, f(v))
-        extensions = []
-        for c in G.connected_components():
-            if self.subtree_size == 0:
-                l = [u for u in c if self.vertex_status[u][0] == Configuration.NOT_SEEN]
-            else:
-                l = [u for u in c if self.vertex_status[u][0] == Configuration.BORDER]
-            if len(l)>0:
-                extensions.append(l[0])
-        return extensions
 
     def include_vertex(self, v):
         r"""
@@ -570,3 +484,85 @@ class Configuration(object):
                 self.num_excluded)
         s = "subtree_size:%s, num_leaf:%s, border_size:%s, num_excluded:%s" %d
         return s
+
+
+class StabilizedConfiguration(Configuration):
+
+    def __init__(self, graph, upper_bound_strategy='dist', max_degree=Infinity):
+        Configuration.__init__(self, graph,
+                upper_bound_strategy=upper_bound_strategy,
+                max_degree=max_degree)
+        self.aut_gr = self.graph.automorphism_group()
+        self.subtree_stab = self.aut_gr
+        self.manunal_rejection = []
+
+    def include_vertex(self, v):
+        degree = super(StabilizedConfiguration, self).include_vertex(v)
+        self.subtree_stab = self.aut_gr.stabilizer(self.subtree_vertices,
+                action='OnSets')
+        return degree
+
+    def exclude_vertex(self, v):
+        super(StabilizedConfiguration, self).exclude_vertex(v)
+        self.manunal_rejection.append(v)
+
+    def _undo_last_inclusion(self, v):
+        super(StabilizedConfiguration, self)._undo_last_inclusion(v)
+        self.subtree_stab = self.aut_gr.stabilizer(self.subtree_vertices,
+            action='OnSets')
+
+    def _undo_last_exclusion(self, v):
+        super(StabilizedConfiguration, self)._undo_last_exclusion(v)
+        self.manunal_rejection.pop()
+
+    def vertex_orbit(self, v):
+        r"""
+        Return the orbit of the vertices in the subtree stabilizer
+
+        OUTPUT:
+
+        All the vertices that can be reach by an automorphism of the
+        graph that preserves the subtree
+        """
+        return list(self.subtree_stab.orbit(v))
+
+
+    def isometric_extension(self, v):
+        r"""
+        Compute all vertices that creates isometric extension that the
+        extension by ``v``
+
+        INPUT:
+
+        ``v``: A vertex that can extend de configuration
+
+
+        OUTPUT:
+
+        All vertices that will extend the configuration in an isometric ways
+        then by ``v``
+
+        EXAMPLE::
+
+            sage: C = StabilizedConfiguration(graphs.CubeGraph(3))
+            sage: sorted(C.isometric_extension('000'))
+            ['000', '001', '010', '011', '100', '101', '110', '111']
+            sage: C.include_vertex('000')
+            0
+            sage: sorted(C.isometric_extension('001'))
+            ['001', '010', '100']
+            sage: C.include_vertex('001')
+            1
+            sage: C.include_vertex('010')
+            2
+            sage: sorted(C.isometric_extension('100'))
+            ['100']
+            sage: sorted(C.isometric_extension('110'))
+            ['101', '110']
+        """
+        assert self.vertex_status[v][0] == Configuration.BORDER or \
+                (self.subtree_size == 0 and self.vertex_status[v][0] == \
+                Configuration.NOT_SEEN), "v is not a valid extension"
+        status = self.vertex_status[v][0]
+        return list(v for v in self.vertex_orbit(v) if \
+                self.vertex_status[v][0] == status)
