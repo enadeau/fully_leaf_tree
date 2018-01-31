@@ -3,13 +3,16 @@ load('flis_configuration.py')
 class SearchTree(object):
 
     def __init__(self, configuration, method='std'):
-        assert method in ['std', 'stab', 'stab2']
+        assert method in ['std', 'stab', 'stab2', 'stabgen']
         if method in ['stab', 'stab2']:
             assert isinstance(configuration, StabilizedConfiguration)
+        if method == 'stabgen':
+            assert isinstance(configuration, ConfigurationForGenStab)
         self.root = configuration
         v = self.root.vertex_to_add()
         if v != None:
             #Inclusion side
+            #print 'include %s' %v
             self.left = copy(configuration)
             self.left.include_vertex(v)
             if method == 'stab2':
@@ -19,8 +22,9 @@ class SearchTree(object):
                             self.left.exclude_vertex(w)
             self.left = SearchTree(self.left, method=method)
             #Exclusion side
+            #print 'exclude %s' %v
             self.right = copy(configuration)
-            if method == 'std':
+            if method in ['std', 'stabgen']:
                 self.right.exclude_vertex(v)
             elif method in ['stab', 'stab2']:
                 for u in self.right.isometric_extension(v):

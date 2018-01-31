@@ -549,7 +549,6 @@ class StabilizedConfiguration(Configuration):
         """
         return list(self.subtree_stab.orbit(v))
 
-
     def isometric_extension(self, v):
         r"""
         Compute all vertices that creates isometric extension that the
@@ -589,3 +588,54 @@ class StabilizedConfiguration(Configuration):
         status = self.vertex_status[v][0]
         return list(v for v in self.vertex_orbit(v) if \
                 self.vertex_status[v][0] == status)
+
+class ConfigurationForGenStab(Configuration):
+
+    def __init__(self, graph, upper_bound_strategy='dist', max_degree=Infinity):
+        Configuration.__init__(self, graph,
+                upper_bound_strategy=upper_bound_strategy,
+                max_degree=max_degree)
+        self.aut_gr = self.graph.automorphism_group()
+        self.inclusion_position = []
+        self.marked_rejection = [[]]
+
+    def include_vertex(self, v):
+        def set_image(f, s):
+            return set(f(v) for v in s)
+        degree = super(ConfigurationForGenStab, self).include_vertex(v)
+        self.marked_rejection.append([])
+        #Excluding for forbiden structure
+        forbiden_subtree = []
+        for (i,l) in enumerate(self.marked_rejection):
+            for v in l:
+                forbiden_subtree.append(set(self.subtree_vertices[:i]+[v]))
+
+        subtree = set(self.subtree_vertices)
+        for t in forbiden_subtree:
+            for f in self.aut_gr:
+                d = set_image(f, t).difference(subtree)
+                if len(d)==1:
+                    u = d.pop()
+                    if self.vertex_status[u][0] in [self.BORDER, self.NOT_SEEN]:
+                        self.vertex_status[u] = (self.EXCLUDED, u)
+
+    def exclude_vertex(self, v):
+        super(ConfigurationForGenStab, self).exclude_vertex(v)
+        self.marked_rejection[-1].append(v)
+        stab = self.aut_gr.stabilizer(self.subtree_vertices, action='OnSets')
+        for u in stab.orbit(v):
+            if self.vertex_status[u][0] in [self.BORDER, self.NOT_SEEN]:
+                self.vertex_status[u] = (self.EXCLUDED, u)
+
+    def undo_last_operation(self):
+        raise NotImplementedError
+
+    def __copy__(self):
+        out = ConfigurationForGenStab(self.graph, upper_bound_strategy=self.upper_bound_strategy,
+                max_degree=self.max_degree_allowed_in_subtree)
+        for v in self.history:
+            if self.vertex_status[v][0] == Configuration.INCLUDED:
+                out.include_vertex(v)
+            else:
+                out.exclude_vertex(v)
+        return out
