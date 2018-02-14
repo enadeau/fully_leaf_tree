@@ -248,6 +248,7 @@ class Configuration(object):
 
         The operation is either an inclusion or an exclusion.
         """
+        assert len(self.history)>0, "No modification to undo"
         v = self.history.pop()
         self.lp_dist_valid = False
         if self.vertex_status[v][0] == Configuration.INCLUDED:
@@ -596,40 +597,66 @@ class ConfigurationForGenStab(Configuration):
                 upper_bound_strategy=upper_bound_strategy,
                 max_degree=max_degree)
         self.aut_gr = self.graph.automorphism_group()
-        self.inclusion_position = []
+        self.stab_stack = [self.aut_gr]
         self.marked_rejection = [[]]
 
     def include_vertex(self, v):
+        r"""
+        Include the vertex ``v`` in the current subtree and color in
+        red all vertices that can creates a forbiden structure if
+        included in the subtree.
+        """
         def set_image(f, s):
+            r"""
+            Compute the image of the set s by the morphis f.
+            """
             return set(f(v) for v in s)
         degree = super(ConfigurationForGenStab, self).include_vertex(v)
         self.marked_rejection.append([])
-        #Excluding for forbiden structure
-        forbiden_subtree = []
-        for (i,l) in enumerate(self.marked_rejection):
-            for v in l:
-                forbiden_subtree.append(set(self.subtree_vertices[:i]+[v]))
+        self.stab_stack.append(self.aut_gr.stabilizer(self.subtree_vertices,
+            action='OnSets'))
+        subtree_set = set(self.subtree_vertices)
+        for f in self.aut_gr:
+            subtree_image=set()
+            for i in range(len(self.subtree_vertices)):
+                subtree_image.add(f(self.subtree_vertices[i]))
+                diff = subtree_image.difference(subtree_set)
+                diff_size = len(diff)
+                for u in self.marked_rejection[i+1]:
+                    u = f(u)
+                    u_in_tree = u in subtree_set
+                    if (not u_in_tree) and diff_size == 0 and self.vertex_status[u][0] == self.BORDER:
+                        self.vertex_status[u] = (self.EXCLUDED, v)
+                    elif u_in_tree and diff_size == 1:
+                        u = next(iter(diff))
+                        if self.vertex_status[u][0] == self.BORDER:
+                            self.vertex_status[u] = (self.EXCLUDED, v)
 
-        subtree = set(self.subtree_vertices)
-        for t in forbiden_subtree:
-            for f in self.aut_gr:
-                d = set_image(f, t).difference(subtree)
-                if len(d)==1:
-                    u = d.pop()
-                    if self.vertex_status[u][0] in [self.BORDER, self.NOT_SEEN]:
-                        self.vertex_status[u] = (self.EXCLUDED, u)
 
     def exclude_vertex(self, v):
+        r"""
+        Exlcude vertex ``v`` and color in red all extension that will creates a
+        isometric structure to the ones that can be creates by ``v``.
+        """
         super(ConfigurationForGenStab, self).exclude_vertex(v)
         self.marked_rejection[-1].append(v)
-        stab = self.aut_gr.stabilizer(self.subtree_vertices, action='OnSets')
+        stab = self.stab_stack[-1]
         for u in stab.orbit(v):
             if self.vertex_status[u][0] in [self.BORDER, self.NOT_SEEN]:
-                self.vertex_status[u] = (self.EXCLUDED, u)
+                self.vertex_status[u] = (self.EXCLUDED, v)
 
     def undo_last_operation(self):
-        raise NotImplementedError
-
+        v = self.history[-1]
+        status = self.vertex_status[v][0]
+        super(ConfigurationForGenStab, self).undo_last_operation()
+        if status == self.INCLUDED:
+            self.stab_stack.pop()
+            self.marked_rejection.pop()
+        else:
+            self.marked_rejection[-1].pop()
+        for u in self.graph.vertex_iterator():
+            if self.vertex_status[u] == (Configuration.EXCLUDED, v):
+                self.vertex_status[u] = (Configuration.BORDER, None)
     def __copy__(self):
         out = ConfigurationForGenStab(self.graph, upper_bound_strategy=self.upper_bound_strategy,
                 max_degree=self.max_degree_allowed_in_subtree)
