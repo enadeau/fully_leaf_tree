@@ -210,12 +210,14 @@ class FLISSolver(object):
         self.lf = L
         self.flt = E
 
-    def _explore_configuration(self, max_deg=Infinity):
+    def _explore_configuration(self, max_deg=None):
         r"""
         Explores all the possible induced subtrees with maximum degree
         ``max_deg`` of ``self.graph`` and updates ``self.lf`` and ``self.flt``
         to keep track of the induced subtrees with the maximum number of
         leaves.
+
+        If ``max_deg=None'' then the subtree can have any maximal degree
         """
         C = self.configuration
         m = C.subtree_size
@@ -231,7 +233,7 @@ class FLISSolver(object):
                 self.lf[m] = l
         elif promising:
             degree = C.include_vertex(next_vertex)
-            if degree <= max_deg:
+            if max_deg == None or degree <= max_deg:
                 self._explore_configuration(max_deg)
             C.undo_last_operation()
             C.exclude_vertex(next_vertex)
