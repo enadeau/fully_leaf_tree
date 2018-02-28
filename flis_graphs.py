@@ -39,6 +39,9 @@ class FLISSolver(object):
         vertices);
       * ``'dist'``: The bound takes into account what vertices could
         potentially be added in the extension according to their distance.
+    - ``enumerator``: A boolean indicating if the class is an enumerator of
+      fully leafed subtrees. Setting this option to ``True```slows down
+      computations signigicantly.
 
     EXAMPLE::
 
@@ -60,20 +63,29 @@ class FLISSolver(object):
         [0, 0, 2, 2, 3, 4, 3, 4, 3, 4, None, None, None, None, None, None, None]
         sage: sorted(FLISSolver(graphs.PetersenGraph()).fully_leafed_induced_subtrees(7)[0])
         [0, 1, 2, 3, 5, 6, 9]
+        sage: sorted(FLISSolver(graphs.CompleteGraph(4), enumerator=True).fully_leafed_subtrees()[2])
+        [[0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3]]
     """
 
-    def __init__(self, graph, algorithm='general', upper_bound_strategy='dist'):
+    def __init__(self, graph, algorithm='general', upper_bound_strategy='dist',
+            enumerator=False):
         assert upper_bound_strategy in ['naive', 'dist'], ('Invalid'
                 ' upper_bound_strategy')
         assert algorithm in ['general', 'cube', 'tree'], 'algorithm invalid'
+        assert enumerator in [True, False], 'enumerator invalid'
         if algorithm == 'tree':
             assert graph.is_tree(), 'graph is not a tree'
         elif algorithm == 'cube':
             assert is_hypercube(graph), 'graph is not a hypercube'
+        if enumerator and algorithm != 'general':
+            warnings.warn('Enumeration is only possible with the general'
+                    ' algorithm, algorithm has been change to general')
+            algorithm = 'general'
         self.graph = graph
         self.n = self.graph.num_verts()
         self.algorithm = algorithm
         self.upper_bound_strategy = upper_bound_strategy
+        self.is_enumerator = enumerator
         self.lf = {}
         self.flt = {}
 
@@ -107,6 +119,9 @@ class FLISSolver(object):
         ``i``.
 
         If ``i is None``, returns a dictionnary of examples for each size.
+
+        If ``self.is_enumerator == True``  it returns all the fully leafed
+        subtrees.
 
         OUTPUT:
 
@@ -222,8 +237,8 @@ class FLISSolver(object):
         C = self.configuration
         m = C.subtree_size
         l = C.subtree_num_leaf()
-        promising = any(self.lf[i] < C.leaf_potential(i) for i in range(m,
-            self.n + 1 - C.num_excluded))
+        promising = any(self.lf[i] < C.leaf_potential(i) + self.is_enumerator \
+                for i in range(m, self.n + 1 - C.num_excluded))
         next_vertex = C.vertex_to_add()
         if next_vertex is None:
             if self.lf[m] == l:
