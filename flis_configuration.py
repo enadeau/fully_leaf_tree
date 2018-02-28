@@ -96,7 +96,7 @@ class Configuration(object):
         self.upper_bound_strategy = upper_bound_strategy
         self.lp_dist_valid = False
         self.border_vertex = v
-        if max_degree == None:
+        if max_degree is None:
             self.max_degree_allowed_in_subtree = graph.num_verts()
         else:
             self.max_degree_allowed_in_subtree = max_degree

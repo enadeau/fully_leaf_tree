@@ -83,7 +83,7 @@ class FLISSolver(object):
 
         OUTPUT:
 
-        A dictionnary ``L`` representing the leaf map. If ``L[i] == None`` no
+        A dictionnary ``L`` representing the leaf map. If ``L[i] is None`` no
         induced of size ``i`` exists in ``G``.
         """
         if not self.lf:
@@ -106,20 +106,20 @@ class FLISSolver(object):
         Returns some fully leafed induced trees of ``self.graph`` of size
         ``i``.
 
-        If ``i == None``, returns a dictionnary of examples for each size.
+        If ``i is None``, returns a dictionnary of examples for each size.
 
         OUTPUT:
 
-        If ``i == None ``: A dictionnary of list of examples of fully leafed
+        If ``i is None ``: A dictionnary of list of examples of fully leafed
         trees for each size.
 
         If i an interger:  A list of examples of fully leafed trees of size
         ``i``.
         """
-        assert i in  range(self.n+1) or i == None, 'i invalid'
+        assert i in  range(self.n+1) or i is None, 'i invalid'
         if not self.flt:
             self.leaf_map()
-        if i == None:
+        if i is None:
             return self.flt
         else:
             return self.flt[i]
@@ -225,7 +225,7 @@ class FLISSolver(object):
         promising = any(self.lf[i] < C.leaf_potential(i) for i in range(m,
             self.n + 1 - C.num_excluded))
         next_vertex = C.vertex_to_add()
-        if next_vertex == None:
+        if next_vertex is None:
             if self.lf[m] == l:
                 self.flt[m].append(copy(C.subtree_vertices))
             elif self.lf[m] < l:
@@ -233,7 +233,7 @@ class FLISSolver(object):
                 self.lf[m] = l
         elif promising:
             degree = C.include_vertex(next_vertex)
-            if max_deg == None or degree <= max_deg:
+            if max_deg is None or degree <= max_deg:
                 self._explore_configuration(max_deg)
             C.undo_last_operation()
             C.exclude_vertex(next_vertex)
