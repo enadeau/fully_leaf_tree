@@ -65,7 +65,7 @@ class Configuration(object):
     - ``border_vertex``: A candidate border vertex.
     """
 
-    def __init__(self, graph, upper_bound_strategy='dist', max_degree=Infinity):
+    def __init__(self, graph, upper_bound_strategy='dist', max_degree=None):
         r"""
         Constructor of an induced subtree configuration.
 
@@ -79,7 +79,8 @@ class Configuration(object):
 
         - ``graph``: The graph
         - ``upper_bound_strategy``: The strategy for the leaf potential.
-        - ``max_degree``: The maximum allowed degree.
+        - ``max_degree``: The maximum allowed degree. No maximal degree if
+          sets to ``None''.
         """
         self.graph = graph
         self.subtree_vertices = []
@@ -95,7 +96,10 @@ class Configuration(object):
         self.upper_bound_strategy = upper_bound_strategy
         self.lp_dist_valid = False
         self.border_vertex = v
-        self.max_degree_allowed_in_subtree = max_degree
+        if max_degree is None:
+            self.max_degree_allowed_in_subtree = graph.num_verts()
+        else:
+            self.max_degree_allowed_in_subtree = max_degree
 
     def vertex_to_add(self):
         r"""
