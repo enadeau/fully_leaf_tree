@@ -149,6 +149,19 @@ def is_k_prefix_normal(word, k):
         False
         sage: is_k_prefix_normal(Word('1101101011'), 0)
         True
+        sage: is_k_prefix_normal(Word([1,1,0,1,0,1,1,0,1,1]), 0)
+        False
+        sage: is_k_prefix_normal(Word([1,1,0,1,1,0,1,0,1,1]), 0)
+        True
+        sage: is_k_prefix_normal(Word([1,1,0,1,2]),0)
+        False
     """
-    return all(letter_complexity(word, '1', len(p)) - num_occurrences(p, '1') <= k\
+    alphabet = sorted(word.letters())
+    if alphabet == [0,1]:
+        one = 1
+    elif alphabet == ['0','1']:
+        one = '1'
+    else:
+        return False
+    return all(letter_complexity(word, one, len(p)) - num_occurrences(p, one) <= k\
                for p in word.prefixes_iterator())
