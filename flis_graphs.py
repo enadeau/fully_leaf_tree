@@ -100,6 +100,22 @@ class FLISSolver(object):
                 self._leaf_map_general()
         return self.lf
 
+    def leaf_word(self):
+        """
+        Returns the leaf word of ``self.graph``.
+
+        OUTPUT:
+
+        A word on alphabet ``2,1,0,-1,-2,...``
+
+        EXAMPLES::
+
+            sage: FLISSolver(graphs.PetersenGraph()).leaf_word()
+            word: 1,0,1,-1,None,None,None
+        """
+        lf = self.leaf_map()
+        diff = lambda x,y: None if (x is None or y is None) else x-y
+        return Word([diff(lf[i+3],lf[i+2]) for i in range(1,self.n-2)])
 
     def fully_leafed_induced_subtrees(self, i=None):
         r"""
