@@ -6,3 +6,4 @@ test:
 	sage -t flis_graphs.py
 	sage -t flis_trees.py
 	sage -t graphs_util.py
+	sage -t leaf_realization.py
